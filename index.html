@@ -96,6 +96,28 @@
   .duo-card h4{font-size:16px;font-weight:800;line-height:1.35;margin:0 0 10px;}
   .duo-card p{font-size:12.5px;color:var(--muted);line-height:1.8;margin:0;}
 
+  /* ---- Announcements ---- */
+  .announce-card{background:var(--card);border-radius:20px;padding:16px 18px;box-shadow:var(--shadow);display:flex;gap:14px;align-items:flex-start;margin-bottom:12px;}
+  .announce-card:last-child{margin-bottom:0;}
+  .announce-ico{width:42px;height:42px;border-radius:12px;flex:0 0 auto;background:var(--rose,#C97F8B);display:flex;align-items:center;justify-content:center;}
+  .announce-ico svg{width:20px;height:20px;stroke:#fff;}
+  .announce-card h4{font-size:14.5px;font-weight:800;margin:0 0 4px;}
+  .announce-card p{font-size:12.5px;color:var(--muted);line-height:1.75;margin:0;}
+
+  /* ---- Live products (from admin) ---- */
+  .live-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .live-card{background:var(--card);border-radius:20px;overflow:hidden;box-shadow:var(--shadow);}
+  .live-img{height:110px;background:linear-gradient(160deg,#E7B7C0,#C08A2E);background-size:cover;background-position:center;}
+  .live-body{padding:12px 14px 14px;}
+  .live-body h4{font-size:13.5px;font-weight:800;margin:0 0 5px;}
+  .live-price{color:var(--blue);font-size:12.5px;font-weight:700;margin-bottom:5px;}
+  .live-body p{font-size:11.5px;color:var(--muted);line-height:1.7;margin:0;}
+
+  /* ---- Comments ---- */
+  .comments-card{background:var(--card);border-radius:24px;padding:22px 18px;box-shadow:var(--shadow);}
+  .comments-card h2{font-size:19px;font-weight:800;margin:0 0 4px;}
+  .comments-card>p{font-size:12.5px;color:var(--muted);margin:0 0 16px;}
+
   .mode-card{background:var(--card);border-radius:22px;padding:18px 20px;box-shadow:var(--shadow);display:flex;align-items:center;justify-content:space-between;gap:14px;}
   .mode-left{display:flex;align-items:center;gap:14px;}
   .mode-left svg{width:26px;height:26px;stroke:var(--muted);flex:0 0 auto;}
@@ -318,6 +340,18 @@
     </div>
   </section>
 
+  <!-- Announcements (loaded from data/posts.json) -->
+  <section class="section" id="liveAnnouncementsSection" style="display:none;">
+    <div class="eyebrow">تازه‌ها</div>
+    <div id="liveAnnouncementsWrap"></div>
+  </section>
+
+  <!-- Products added from admin panel (loaded from data/posts.json) -->
+  <section class="section" id="liveProductsSection" style="display:none;">
+    <div class="eyebrow">محصولات جدید</div>
+    <div class="live-grid" id="liveProductsGrid"></div>
+  </section>
+
   <section class="section">
     <div class="duo">
       <div class="duo-card">
@@ -362,6 +396,15 @@
         <a href="#">قوانین و مقررات</a>
         <a href="#">تماس با پشتیبانی</a>
       </div>
+    </div>
+  </section>
+
+  <!-- Customer comments (Disqus) -->
+  <section class="section">
+    <div class="comments-card">
+      <h2>نظرات مشتریان</h2>
+      <p>نظرتون رو با ورود از طریق گوگل، فیسبوک یا ایمیل ثبت کنید.</p>
+      <div id="disqus_thread"></div>
     </div>
   </section>
 
@@ -516,6 +559,82 @@
   track.addEventListener('touchend', resume, {passive:true});
   track.addEventListener('mouseenter', pause);
   track.addEventListener('mouseleave', resume);
+
+  /* ---- Load posts (products / announcements) added from admin.html ---- */
+  function escapeHtml(str){
+    return String(str || '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+  }
+  fetch('data/posts.json', {cache:'no-store'})
+    .then(r => r.ok ? r.json() : [])
+    .then(posts => {
+      if (!Array.isArray(posts) || !posts.length) return;
+      const products = posts.filter(p => p.type === 'product');
+      const announcements = posts.filter(p => p.type === 'announcement');
+
+      if (announcements.length) {
+        document.getElementById('liveAnnouncementsSection').style.display = 'block';
+        document.getElementById('liveAnnouncementsWrap').innerHTML = announcements.map(a => `
+          <div class="announce-card">
+            <div class="announce-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M12 2l2.6 5.9L21 9l-4.8 4 1.4 6.4L12 16.7 6.4 19.4 7.8 13 3 9l6.4-1.1z"/></svg></div>
+            <div>
+              <h4>${escapeHtml(a.title)}</h4>
+              <p>${escapeHtml(a.desc)}</p>
+            </div>
+          </div>`).join('');
+      }
+
+      if (products.length) {
+        document.getElementById('liveProductsSection').style.display = 'block';
+        document.getElementById('liveProductsGrid').innerHTML = products.map(p => `
+          <div class="live-card">
+            <div class="live-img" style="${p.image ? `background-image:url('${encodeURI(p.image)}')` : ''}"></div>
+            <div class="live-body">
+              <h4>${escapeHtml(p.title)}</h4>
+              ${p.price ? `<div class="live-price">${escapeHtml(p.price)}</div>` : ''}
+              <p>${escapeHtml(p.desc)}</p>
+            </div>
+          </div>`).join('');
+      }
+    })
+    .catch(() => {});
+
+  /* ---- Load appearance settings (menu photo / header photos) set from admin.html ---- */
+  fetch('data/config.json', {cache:'no-store'})
+    .then(r => r.ok ? r.json() : {})
+    .then(cfg => {
+      if (cfg.menuPhoto) {
+        const photo = document.querySelector('.menu-photo');
+        const hint = document.querySelector('.placeholder-hint');
+        if (photo) {
+          photo.style.backgroundImage = `linear-gradient(180deg, rgba(0,0,0,0.05), rgba(0,0,0,0.55)), url('${encodeURI(cfg.menuPhoto)}')`;
+          photo.style.backgroundSize = 'cover';
+          photo.style.backgroundPosition = 'center';
+        }
+        if (hint) hint.style.display = 'none';
+      }
+      if (Array.isArray(cfg.headerPhotos) && cfg.headerPhotos.length) {
+        document.querySelectorAll('.cslide').forEach((el, i) => {
+          const src = cfg.headerPhotos[i % cfg.headerPhotos.length];
+          el.style.backgroundImage = `url('${encodeURI(src)}')`;
+          el.style.backgroundSize = 'cover';
+          el.style.backgroundPosition = 'center';
+        });
+      }
+    })
+    .catch(() => {});
+
+  /* ---- Disqus comments ---- */
+  /* IMPORTANT: replace YOUR-DISQUS-SHORTNAME below once you create a free account at disqus.com */
+  var disqus_config = function () {
+    this.page.url = window.location.href;
+    this.page.identifier = 'persian-shop-home';
+  };
+  (function() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://YOUR-DISQUS-SHORTNAME.disqus.com/embed.js';
+    s.setAttribute('data-timestamp', +new Date());
+    (d.head || d.body).appendChild(s);
+  })();
 </script>
 </body>
 </html>
