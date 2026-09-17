@@ -417,6 +417,7 @@
       if (!rows.length) { setStatus('headerStatus', 'err', 'اول «بارگذاری اسلایدهای فعلی» رو بزنید تا ردیف‌ها بیاد.'); return; }
 
       const slides = [];
+      const rowErrors = [];
       for (let i = 0; i < rows.length; i++) {
         const row = rows[i];
         const label = row.querySelector('.slide-label').value.trim();
@@ -427,8 +428,17 @@
 
         let image = existingImage;
         if (file) {
-          setStatus('headerStatus', 'busy', `در حال آپلود عکس اسلاید ${i + 1}...`);
-          image = await ghUploadImage(file);
+          if (!file.type || !file.type.startsWith('image/')) {
+            rowErrors.push(`اسلاید ${i + 1}: فایل انتخابی عکس نیست، عکس قبلی این اسلاید نگه داشته شد.`);
+          } else {
+            setStatus('headerStatus', 'busy', `در حال آپلود عکس اسلاید ${i + 1}...`);
+            try {
+              image = await ghUploadImage(file);
+            } catch (imgErr) {
+              rowErrors.push(`اسلاید ${i + 1}: ${errMsg(imgErr)} — عکس قبلی این اسلاید نگه داشته شد.`);
+              // keep existingImage, don't block the other slides
+            }
+          }
         }
         if (!image && !label) continue; // fully empty row, skip
         slides.push({ label, image });
@@ -438,7 +448,10 @@
 
       setStatus('headerStatus', 'busy', 'در حال ذخیره تنظیمات...');
       await saveConfigPatch({ headerSlides: slides });
-      setStatus('headerStatus', 'ok', 'اسلایدهای هدر ذخیره شدن 🎉');
+      setStatus('headerStatus', 'ok',
+        rowErrors.length
+          ? 'اسلایدهای هدر ذخیره شدن، ولی: \n' + rowErrors.join('\n')
+          : 'اسلایدهای هدر ذخیره شدن 🎉');
     } catch (e) {
       setStatus('headerStatus', 'err', 'خطا: ' + errMsg(e));
     }
