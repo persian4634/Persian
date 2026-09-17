@@ -59,12 +59,19 @@
   .round-btn svg{width:18px;height:18px;stroke:var(--text);}
   .round-btn.active svg{stroke:var(--blue);}
 
-  /* ---- Stories row (static, swipe-to-scroll, Instagram-style) ---- */
+  /* ---- Stories row (auto-moving carousel, Instagram-style) ---- */
   .stories-wrap{
-    display:flex;gap:18px;overflow-x:auto;padding:8px 20px 14px;
-    -webkit-overflow-scrolling:touch;scrollbar-width:none;
+    overflow:hidden;padding:8px 0 14px;position:relative;
   }
-  .stories-wrap::-webkit-scrollbar{display:none;}
+  .stories-track{
+    display:flex;gap:18px;width:max-content;padding:0 20px;
+    animation:storiesScroll 26s linear infinite;
+  }
+  .stories-wrap.paused .stories-track{animation-play-state:paused;}
+  @keyframes storiesScroll{
+    from{transform:translateX(0);}
+    to{transform:translateX(-50%);}
+  }
   .story-item{flex:0 0 auto;width:74px;text-align:center;background:none;border:none;font-family:inherit;padding:0;}
   .story-ring{
     width:74px;height:74px;border-radius:50%;padding:3px;box-sizing:border-box;
@@ -256,6 +263,7 @@
     display:flex;align-items:center;justify-content:center;
   }
   .modal-close svg{width:14px;height:14px;stroke:#C0424D;}
+  .modal-photo{width:100%;height:180px;border-radius:18px;background:linear-gradient(160deg,#E7B7C0,#C08A2E);background-size:cover;background-position:center;margin-bottom:16px;}
   .modal-top{display:flex;align-items:center;gap:14px;margin-bottom:16px;}
   .modal-ico{width:52px;height:52px;border-radius:50%;flex:0 0 auto;display:flex;align-items:center;justify-content:center;}
   .modal-ico svg{width:24px;height:24px;stroke:#fff;}
@@ -282,13 +290,15 @@
     <div class="logo">پرشین</div>
   </header>
 
-  <!-- Static, Instagram-style story row (does not auto-scroll; swipe to browse) -->
-  <div class="stories-wrap" id="storiesTrack">
+  <!-- Auto-moving, Instagram-style story row (tap to pause/interact) -->
+  <div class="stories-wrap" id="storiesWrap">
+    <div class="stories-track" id="storiesTrack">
     <div class="story-item" data-title="بدلیجات"><div class="story-ring" style="--c1:#F4C452;--c2:#C98A1E;"><div class="story-photo"><div class="story-photo-inner"><svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.3" fill="#fff" stroke="none"/></svg></div></div></div><span>بدلیجات</span></div>
     <div class="story-item" data-title="کش و کلیپس"><div class="story-ring" style="--c1:#C782D9;--c2:#6E3E9C;"><div class="story-photo"><div class="story-photo-inner"><svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><path d="M4 12c3-4 6-4 8 0s5 4 8 0"/></svg></div></div></div><span>کش و کلیپس</span></div>
     <div class="story-item" data-title="عینک آفتابی"><div class="story-ring" style="--c1:#5FCFC0;--c2:#1E7E76;"><div class="story-photo"><div class="story-photo-inner"><svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><circle cx="7" cy="13" r="3.2"/><circle cx="17" cy="13" r="3.2"/><path d="M10.2 13h3.6M3.6 13l1.5-5h13.8l1.5 5"/></svg></div></div></div><span>عینک آفتابی</span></div>
     <div class="story-item" data-title="جاکلیدی"><div class="story-ring" style="--c1:#E7727E;--c2:#8C2E3D;"><div class="story-photo"><div class="story-photo-inner"><svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><circle cx="8" cy="8" r="3.8"/><path d="M10.7 10.7l8.3 8.3M15.4 15.4l1.8-1.8M17.9 17.9l1.8-1.8"/></svg></div></div></div><span>جاکلیدی</span></div>
     <div class="story-item" data-title="ارسال ویژه"><div class="story-ring" style="--c1:#6E93F0;--c2:#2E4CA8;"><div class="story-photo"><div class="story-photo-inner"><svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><path d="M3 12h13l4 4M3 12l4-4M3 12l4 4"/></svg></div></div></div><span>ارسال ویژه</span></div>
+    </div>
   </div>
 
   <section class="section">
@@ -491,6 +501,7 @@
     <button class="modal-close" id="closeModal">
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2"><path d="M6 6l12 12M18 6L6 18"/></svg>
     </button>
+    <div class="modal-photo" id="modalPhoto" style="display:none;"></div>
     <div class="modal-top">
       <div class="modal-ico" id="modalIco"></div>
       <div>
@@ -540,6 +551,7 @@
     }
   };
   const modalOverlay = document.getElementById('modalOverlay');
+  const modalPhoto = document.getElementById('modalPhoto');
   const modalIco = document.getElementById('modalIco');
   const modalEyebrow = document.getElementById('modalEyebrow');
   const modalTitle = document.getElementById('modalTitle');
@@ -548,10 +560,13 @@
   document.querySelectorAll('.fill-btn[data-cat]').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       const d = catData[btn.dataset.cat];
+      modalPhoto.style.display = 'none';
+      modalIco.style.display = 'flex';
       modalIco.style.background = d.color;
       modalIco.innerHTML = d.icon;
       modalEyebrow.textContent = d.eyebrow;
       modalTitle.textContent = d.title;
+      modalDesc.style.display = 'block';
       modalDesc.textContent = d.desc;
       modalOverlay.classList.add('open');
     });
@@ -560,17 +575,27 @@
   modalOverlay.addEventListener('click', (e)=>{ if(e.target === modalOverlay) modalOverlay.classList.remove('open'); });
 
   const track = document.getElementById('storiesTrack');
-  // Tapping a story opens the modal, same as a showcase card, but only when
-  // that story has a description set in admin (plain stories with just a
-  // photo + label aren't clickable).
+  // Tapping any story opens it — shows its photo (if it has one) plus
+  // title and description.
   track.addEventListener('click', (e) => {
     const item = e.target.closest('.story-item');
-    if (!item || !item.dataset.desc) return;
-    modalIco.style.background = '#4C6FF0';
-    modalIco.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M12 2l2.6 5.9L21 9l-4.8 4 1.4 6.4L12 16.7 6.4 19.4 7.8 13 3 9l6.4-1.1z"/></svg>';
+    if (!item) return;
+    const image = item.dataset.image;
+    if (image) {
+      modalPhoto.style.display = 'block';
+      modalPhoto.style.backgroundImage = `url('${encodeURI(image)}')`;
+      modalIco.style.display = 'none';
+    } else {
+      modalPhoto.style.display = 'none';
+      modalIco.style.display = 'flex';
+      modalIco.style.background = '#4C6FF0';
+      modalIco.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M12 2l2.6 5.9L21 9l-4.8 4 1.4 6.4L12 16.7 6.4 19.4 7.8 13 3 9l6.4-1.1z"/></svg>';
+    }
     modalEyebrow.textContent = '';
     modalTitle.textContent = item.dataset.title || '';
-    modalDesc.textContent = item.dataset.desc;
+    const hasDesc = !!item.dataset.desc;
+    modalDesc.style.display = hasDesc ? 'block' : 'none';
+    modalDesc.textContent = hasDesc ? item.dataset.desc : '';
     modalOverlay.classList.add('open');
   });
 
@@ -588,38 +613,59 @@
   ];
   function renderStories(stories){
     const list = (stories && stories.length) ? stories : defaultStories;
-    track.innerHTML = list.map(s => {
+    // Render the list twice back-to-back so the CSS marquee animation
+    // (which shifts by exactly one copy's width) loops seamlessly.
+    const doubled = list.concat(list);
+    track.innerHTML = doubled.map((s, i) => {
       const ring = `--c1:${s.c1 || '#5FCFC0'};--c2:${s.c2 || '#1E7E76'};`;
       const photoBg = s.image ? `background-image:url('${encodeURI(s.image)}');` : '';
       const icon = s.image ? '' : (s.icon || '');
       const desc = s.desc ? ` data-desc="${escapeHtml(s.desc)}"` : '';
-      return `<div class="story-item" data-title="${escapeHtml(s.label || '')}"${desc}>
+      const image = s.image ? ` data-image="${escapeHtml(s.image)}"` : '';
+      return `<div class="story-item" data-index="${i % list.length}" data-title="${escapeHtml(s.label || '')}"${desc}${image}>
         <div class="story-ring" style="${ring}"><div class="story-photo"><div class="story-photo-inner" style="${photoBg}">${icon}</div></div></div>
         <span>${escapeHtml(s.label || '')}</span>
       </div>`;
     }).join('');
   }
 
-  // Preload every real story photo fully before swapping it in, so photos
-  // never appear half-downloaded. The default demo stories stay on screen
-  // (no blank gap) until the real photos are ready, then everything swaps
-  // in at once.
-  function preloadImage(url){
-    return new Promise(resolve => {
+  // Render the row immediately (icons show right away, nothing waits), then
+  // stream each real photo in for its own circle the moment that photo
+  // finishes loading — the first one ready shows first instead of the whole
+  // row waiting on the slowest image. Both copies of a story (original +
+  // looped duplicate) share a data-index, so both get updated together.
+  function hydrateStoryImages(stories){
+    (stories || []).forEach((s, i) => {
+      if (!s.image) return;
+      const url = encodeURI(s.image);
       const img = new Image();
-      const done = () => resolve();
-      img.onload = done;
-      img.onerror = done; // don't let one broken photo block the rest forever
-      img.src = url;
-      // Safety timeout in case a slow/broken image never fires load or error
-      setTimeout(done, 6000);
+      img.onload = () => {
+        track.querySelectorAll(`.story-item[data-index="${i}"] .story-photo-inner`).forEach(inner => {
+          inner.style.backgroundImage = `url('${url}')`;
+          inner.innerHTML = '';
+        });
+      };
+      img.src = url; // onerror: leave the icon in place, no broken image
     });
   }
-  function preloadAndRenderStories(stories){
-    const urls = (stories || []).filter(s => s.image).map(s => encodeURI(s.image));
-    if (!urls.length) { renderStories(stories); return; }
-    Promise.all(urls.map(preloadImage)).then(() => renderStories(stories));
+  function renderAndHydrateStories(stories){
+    renderStories(stories);
+    hydrateStoryImages(stories);
   }
+  // Build the (doubled, loop-ready) story row immediately, using the demo
+  // set; if admin has set custom header slides they'll replace this once
+  // config.json is fetched below.
+  renderStories();
+
+  // Auto-moving carousel: the row scrolls itself via CSS animation. Pause
+  // it while the user is pressing/dragging a story so it doesn't fight
+  // their touch, then resume a moment after they let go.
+  const storiesWrap = document.getElementById('storiesWrap');
+  let resumeTimer;
+  function pauseStories(){ storiesWrap.classList.add('paused'); clearTimeout(resumeTimer); }
+  function resumeStoriesSoon(){ clearTimeout(resumeTimer); resumeTimer = setTimeout(() => storiesWrap.classList.remove('paused'), 1500); }
+  ['touchstart','pointerdown'].forEach(evt => storiesWrap.addEventListener(evt, pauseStories, {passive:true}));
+  ['touchend','pointerup','pointercancel'].forEach(evt => storiesWrap.addEventListener(evt, resumeStoriesSoon, {passive:true}));
 
   /* ---- Load posts (products / announcements / showcase cards) added from admin.html ---- */
   fetch('data/posts.json', {cache:'no-store'})
@@ -676,10 +722,19 @@
           btn.addEventListener('click', () => {
             const post = showcases.find(s => s.id === btn.dataset.showcaseId);
             if (!post) return;
-            modalIco.style.background = '#4C6FF0';
-            modalIco.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M12 2l2.6 5.9L21 9l-4.8 4 1.4 6.4L12 16.7 6.4 19.4 7.8 13 3 9l6.4-1.1z"/></svg>';
+            if (post.image) {
+              modalPhoto.style.display = 'block';
+              modalPhoto.style.backgroundImage = `url('${encodeURI(post.image)}')`;
+              modalIco.style.display = 'none';
+            } else {
+              modalPhoto.style.display = 'none';
+              modalIco.style.display = 'flex';
+              modalIco.style.background = '#4C6FF0';
+              modalIco.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M12 2l2.6 5.9L21 9l-4.8 4 1.4 6.4L12 16.7 6.4 19.4 7.8 13 3 9l6.4-1.1z"/></svg>';
+            }
             modalEyebrow.textContent = post.eyebrow || '';
             modalTitle.textContent = post.title;
+            modalDesc.style.display = 'block';
             modalDesc.textContent = post.desc;
             modalOverlay.classList.add('open');
           });
@@ -703,7 +758,7 @@
         if (hint) hint.style.display = 'none';
       }
       if (Array.isArray(cfg.headerSlides) && cfg.headerSlides.length) {
-        preloadAndRenderStories(cfg.headerSlides);
+        renderAndHydrateStories(cfg.headerSlides);
       }
     })
     .catch(() => {});
