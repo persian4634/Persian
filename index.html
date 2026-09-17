@@ -593,6 +593,27 @@
     }).join('');
   }
 
+  // Preload every real header photo fully before swapping it into the moving
+  // carousel, so photos never appear half-downloaded while they scroll past.
+  // The default demo slides stay on screen (no blank gap) until the real
+  // photos are ready, then everything swaps in at once.
+  function preloadImage(url){
+    return new Promise(resolve => {
+      const img = new Image();
+      const done = () => resolve();
+      img.onload = done;
+      img.onerror = done; // don't let one broken photo block the rest forever
+      img.src = url;
+      // Safety timeout in case a slow/broken image never fires load or error
+      setTimeout(done, 6000);
+    });
+  }
+  function preloadAndRenderCarousel(slides){
+    const urls = (slides || []).filter(s => s.image).map(s => encodeURI(s.image));
+    if (!urls.length) { renderCarousel(slides); return; }
+    Promise.all(urls.map(preloadImage)).then(() => renderCarousel(slides));
+  }
+
   /* ---- Load posts (products / announcements / showcase cards) added from admin.html ---- */
   fetch('data/posts.json', {cache:'no-store'})
     .then(r => r.ok ? r.json() : [])
@@ -675,7 +696,7 @@
         if (hint) hint.style.display = 'none';
       }
       if (Array.isArray(cfg.headerSlides) && cfg.headerSlides.length) {
-        renderCarousel(cfg.headerSlides);
+        preloadAndRenderCarousel(cfg.headerSlides);
       }
     })
     .catch(() => {});

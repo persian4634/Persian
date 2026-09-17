@@ -282,8 +282,8 @@
     return ghPutFile(path, b64EncodeUnicode(text), message, sha);
   }
 
-  async function ghUploadImage(file){
-    const compressed = await compressImage(file, 1600, 0.82);
+  async function ghUploadImage(file, maxDim, quality){
+    const compressed = await compressImage(file, maxDim || 1600, quality || 0.82);
     const base = Date.now() + '-' + file.name.replace(/[^a-zA-Z0-9.\-_]/g, '-').replace(/\.[^.]+$/, '');
     const path = `images/${base}.jpg`;
     await ghPutFile(path, compressed, `آپلود عکس ${base}.jpg`);
@@ -433,7 +433,10 @@
           } else {
             setStatus('headerStatus', 'busy', `در حال آپلود عکس اسلاید ${i + 1}...`);
             try {
-              image = await ghUploadImage(file);
+              // Header slides only ever show at ~150x220px, so a smaller,
+              // lighter file here means the carousel on the live site
+              // loads fast instead of flashing half-loaded photos.
+              image = await ghUploadImage(file, 700, 0.8);
             } catch (imgErr) {
               rowErrors.push(`اسلاید ${i + 1}: ${errMsg(imgErr)} — عکس قبلی این اسلاید نگه داشته شد.`);
               // keep existingImage, don't block the other slides
