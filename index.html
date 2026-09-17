@@ -61,7 +61,7 @@
 
   /* ---- Carousel (auto-moving) ---- */
   .carousel-wrap{overflow:hidden;padding:4px 0 6px;-webkit-mask-image:linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);mask-image:linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);}
-  .carousel{display:flex;gap:12px;width:max-content;animation:scrollX 26s linear infinite;padding:0 20px;}
+  .carousel{display:flex;gap:12px;width:max-content;animation:scrollX 26s linear infinite;padding:0 20px;direction:ltr;}
   .carousel.paused{animation-play-state:paused;}
   @keyframes scrollX{from{transform:translateX(0);}to{transform:translateX(-50%);}}
   .cslide{
@@ -73,7 +73,8 @@
   }
   .cslide::after{content:"";position:absolute;inset:0;background:linear-gradient(0deg, rgba(0,0,0,0.55), rgba(0,0,0,0) 55%);}
   .cslide svg{position:absolute;top:20px;left:20px;width:30px;height:30px;opacity:.9;z-index:1;}
-  .cslide span{position:absolute;bottom:16px;right:16px;left:16px;color:#fff;font-weight:700;font-size:15px;z-index:1;text-align:right;}
+  .cslide span{position:absolute;bottom:16px;right:16px;left:16px;color:#fff;font-weight:700;font-size:15px;z-index:1;text-align:right;direction:rtl;}
+  .cslide{direction:rtl;}
 
   .section{padding:20px 20px 0;}
 
@@ -579,7 +580,9 @@
     { label:'ارسال ویژه', c1:'#6E93F0', c2:'#2E4CA8', icon:'<svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><path d="M3 12h13l4 4M3 12l4-4M3 12l4 4"/></svg>' }
   ];
   function renderCarousel(slides){
-    const list = (slides && slides.length) ? slides : defaultHeaderSlides;
+    let list = (slides && slides.length) ? slides.slice() : defaultHeaderSlides;
+    const base = list.slice();
+    while (list.length < 5) { list = list.concat(base); } // pad short admin lists so the loop never runs dry
     const doubled = list.concat(list); // duplicate for the seamless loop
     track.innerHTML = doubled.map(s => {
       const bg = s.image
