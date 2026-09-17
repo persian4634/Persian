@@ -127,12 +127,19 @@
       <div class="status" id="menuStatus"></div>
     </div>
     <div class="card">
-      <h2>استوری‌های زیر هدر (مثل اینستاگرام)</h2>
-      <p class="help">هر استوری یه دایره با عکس و یه متن کوتاه زیرشه. تعدادشون آزاده — هر چند تا بخوای می‌تونی اضافه یا حذف کنی. عکس مربعی حدود ۴۰۰×۴۰۰ پیکسل بهترین نتیجه رو می‌ده (چون دایره‌ای بریده می‌شه). توضیح اختیاریه؛ اگه بذاری، با زدن روی استوری تو سایت باز می‌شه.</p>
-      <button class="btn btn-secondary" id="loadSlidesBtn">بارگذاری استوری‌های فعلی</button>
+      <h2>استوری‌ها (ردیف دایره‌ای زیر هدر)</h2>
+      <p class="help">برای هر استوری یه عکس و یه عنوان کوتاه بذارید. عکس مربعی (مثلاً ۶۰۰×۶۰۰) بهترین نتیجه رو می‌ده. اگه عکس جدید انتخاب نکنید، عکس قبلی همون استوری حفظ می‌شه.</p>
+      <button class="btn btn-secondary" id="loadStoriesBtn">بارگذاری استوری‌های فعلی</button>
+      <div id="storyRows"></div>
+      <button class="btn btn-primary" id="saveStoriesBtn">ذخیره استوری‌ها</button>
+      <div class="status" id="storiesStatus"></div>
+    </div>
+    <div class="card">
+      <h2>کارت‌های بزرگ هدر (بالای صفحه)</h2>
+      <p class="help">برای هر کارت یه عکس و یه متن کوتاه (که روی عکس نشون داده می‌شه) بذارید. عکس عمودی حدود ۶۰۰×۸۰۰ پیکسل بهترین نتیجه رو می‌ده. این بخش کاملاً مستقل از استوری‌هاست. اگه عکس جدید انتخاب نکنید، عکس قبلی همون کارت حفظ می‌شه.</p>
+      <button class="btn btn-secondary" id="loadSlidesBtn">بارگذاری کارت‌های فعلی</button>
       <div id="slideRows"></div>
-      <button class="btn btn-secondary" id="addSlideBtn" style="display:none;">+ افزودن استوری جدید</button>
-      <button class="btn btn-primary" id="saveHeaderBtn">ذخیره استوری‌ها</button>
+      <button class="btn btn-primary" id="saveHeaderBtn">ذخیره کارت‌های هدر</button>
       <div class="status" id="headerStatus"></div>
     </div>
   </div>
@@ -283,8 +290,8 @@
     return ghPutFile(path, b64EncodeUnicode(text), message, sha);
   }
 
-  async function ghUploadImage(file, maxDim, quality){
-    const compressed = await compressImage(file, maxDim || 1600, quality || 0.82);
+  async function ghUploadImage(file){
+    const compressed = await compressImage(file, 1600, 0.82);
     const base = Date.now() + '-' + file.name.replace(/[^a-zA-Z0-9.\-_]/g, '-').replace(/\.[^.]+$/, '');
     const path = `images/${base}.jpg`;
     await ghPutFile(path, compressed, `آپلود عکس ${base}.jpg`);
@@ -410,60 +417,7 @@
     }
   });
 
-  document.getElementById('saveHeaderBtn').addEventListener('click', async () => {
-    try {
-      validateCfg();
-      persistCfgIfNeeded();
-      const rows = Array.from(document.querySelectorAll('.slide-row'));
-      if (!rows.length) { setStatus('headerStatus', 'err', 'اول «بارگذاری استوری‌های فعلی» رو بزنید تا ردیف‌ها بیاد.'); return; }
-
-      const slides = [];
-      const rowErrors = [];
-      for (let i = 0; i < rows.length; i++) {
-        const row = rows[i];
-        const label = row.querySelector('.slide-label').value.trim();
-        const desc = row.querySelector('.slide-desc').value.trim();
-        const file = row.querySelector('.slide-file').files[0];
-        const existingImage = row.dataset.existingImage || '';
-        const removed = row.querySelector('.slide-remove').checked;
-        if (removed) continue;
-
-        let image = existingImage;
-        if (file) {
-          if (!file.type || !file.type.startsWith('image/')) {
-            rowErrors.push(`استوری ${i + 1}: فایل انتخابی عکس نیست، عکس قبلی این استوری نگه داشته شد.`);
-          } else {
-            setStatus('headerStatus', 'busy', `در حال آپلود عکس استوری ${i + 1}...`);
-            try {
-              // Story circles only ever show at ~74px (even on a big phone
-              // screen that's well under 250px), so a small, light file here
-              // means the row on the live site loads fast instead of
-              // flashing half-loaded photos.
-              image = await ghUploadImage(file, 480, 0.82);
-            } catch (imgErr) {
-              rowErrors.push(`استوری ${i + 1}: ${errMsg(imgErr)} — عکس قبلی این استوری نگه داشته شد.`);
-              // keep existingImage, don't block the other rows
-            }
-          }
-        }
-        if (!image && !label) continue; // fully empty row, skip
-        slides.push({ label, image, desc });
-      }
-
-      if (!slides.length) { setStatus('headerStatus', 'err', 'حداقل یه استوری با عکس یا متن لازمه.'); return; }
-
-      setStatus('headerStatus', 'busy', 'در حال ذخیره تنظیمات...');
-      await saveConfigPatch({ headerSlides: slides });
-      setStatus('headerStatus', 'ok',
-        rowErrors.length
-          ? 'استوری‌ها ذخیره شدن، ولی: \n' + rowErrors.join('\n')
-          : 'استوری‌ها ذخیره شدن 🎉');
-    } catch (e) {
-      setStatus('headerStatus', 'err', 'خطا: ' + errMsg(e));
-    }
-  });
-
-  function buildSlideRow(index, existing){
+  function buildSlideRow(index, existing, rowLabel){
     const wrap = document.createElement('div');
     wrap.className = 'slide-row';
     wrap.style.borderTop = '1px solid #EEEEEC';
@@ -471,14 +425,12 @@
     wrap.style.marginTop = '12px';
     wrap.dataset.existingImage = (existing && existing.image) || '';
     wrap.innerHTML = `
-      <label style="margin-top:0;">استوری ${index + 1} — متن زیر عکس</label>
+      <label style="margin-top:0;">${rowLabel} ${index + 1} — ${rowLabel === 'استوری' ? 'عنوان کوتاه' : 'متن روی عکس'}</label>
       <input type="text" class="slide-label" value="${(existing && existing.label) ? existing.label.replace(/"/g,'&quot;') : ''}" placeholder="مثلاً: بدلیجات">
-      <label>توضیح (اختیاری — اگه پر باشه، با لمس استوری تو سایت باز می‌شه)</label>
-      <textarea class="slide-desc" placeholder="مثلاً: از بدلیجات ظریف تا جاکلیدی، با کیفیتی که حسش می‌کنی.">${(existing && existing.desc) ? existing.desc.replace(/</g,'&lt;') : ''}</textarea>
-      <label>عکس (مربعی) ${existing && existing.image ? '(اگه عکس جدید انتخاب نکنید، همین عکس فعلی می‌مونه)' : ''}</label>
+      <label>عکس ${existing && existing.image ? '(اگه عکس جدید انتخاب نکنید، همین عکس فعلی می‌مونه)' : ''}</label>
       <input type="file" class="slide-file" accept="image/*">
       ${existing && existing.image ? `<img class="thumb" style="display:block;" src="${existing.image.startsWith('http') ? existing.image : ('https://raw.githubusercontent.com/' + els.owner.value.trim() + '/' + els.repo.value.trim() + '/' + els.branch.value.trim() + '/' + existing.image)}">` : ''}
-      <div class="check"><input type="checkbox" class="slide-remove"><label style="margin:0;color:var(--muted);font-weight:400;">حذف این استوری</label></div>
+      <div class="check"><input type="checkbox" class="slide-remove"><label style="margin:0;color:var(--muted);font-weight:400;">حذف این ${rowLabel === 'استوری' ? 'استوری' : 'کارت'}</label></div>
     `;
     const fileInput = wrap.querySelector('.slide-file');
     fileInput.addEventListener('change', () => {
@@ -494,32 +446,83 @@
     return wrap;
   }
 
-  document.getElementById('loadSlidesBtn').addEventListener('click', async () => {
-    try {
-      validateCfg();
-      persistCfgIfNeeded();
-      setStatus('headerStatus', 'busy', 'در حال دریافت...');
-      const current = await ghGetFile('data/config.json');
-      let config = {};
-      if (current.exists) { try { config = JSON.parse(current.content); } catch(e){ config = {}; } }
-      const existingSlides = Array.isArray(config.headerSlides) ? config.headerSlides : [];
-      const wrap = document.getElementById('slideRows');
-      wrap.innerHTML = '';
-      const rowCount = Math.max(existingSlides.length, 1);
-      for (let i = 0; i < rowCount; i++) {
-        wrap.appendChild(buildSlideRow(wrap.children.length, existingSlides[i]));
+  // Shared logic for both the "استوری‌ها" section (configKey: storySlides)
+  // and the "کارت‌های بزرگ هدر" section (configKey: heroSlides) — they are
+  // saved and loaded completely independently of each other.
+  function wireSlideSection(configKey, rowsId, loadBtnId, saveBtnId, statusId, rowLabel, itemNamePersian){
+    document.getElementById(loadBtnId).addEventListener('click', async () => {
+      try {
+        validateCfg();
+        persistCfgIfNeeded();
+        setStatus(statusId, 'busy', 'در حال دریافت...');
+        const current = await ghGetFile('data/config.json');
+        let config = {};
+        if (current.exists) { try { config = JSON.parse(current.content); } catch(e){ config = {}; } }
+        const existingSlides = Array.isArray(config[configKey]) ? config[configKey] : [];
+        const wrap = document.getElementById(rowsId);
+        wrap.innerHTML = '';
+        for (let i = 0; i < 5; i++) {
+          wrap.appendChild(buildSlideRow(i, existingSlides[i], rowLabel));
+        }
+        document.getElementById(statusId).className = 'status';
+      } catch (e) {
+        setStatus(statusId, 'err', 'خطا: ' + errMsg(e));
       }
-      document.getElementById('addSlideBtn').style.display = 'block';
-      document.getElementById('headerStatus').className = 'status';
-    } catch (e) {
-      setStatus('headerStatus', 'err', 'خطا: ' + errMsg(e));
-    }
-  });
+    });
 
-  document.getElementById('addSlideBtn').addEventListener('click', () => {
-    const wrap = document.getElementById('slideRows');
-    wrap.appendChild(buildSlideRow(wrap.children.length, null));
-  });
+    document.getElementById(saveBtnId).addEventListener('click', async () => {
+      try {
+        validateCfg();
+        persistCfgIfNeeded();
+        const rows = Array.from(document.querySelectorAll('#' + rowsId + ' .slide-row'));
+        if (!rows.length) { setStatus(statusId, 'err', `اول «بارگذاری ${itemNamePersian} فعلی» رو بزنید تا ردیف‌ها بیاد.`); return; }
+
+        const slides = [];
+        const rowErrors = [];
+        for (let i = 0; i < rows.length; i++) {
+          const row = rows[i];
+          const label = row.querySelector('.slide-label').value.trim();
+          const file = row.querySelector('.slide-file').files[0];
+          const existingImage = row.dataset.existingImage || '';
+          const removed = row.querySelector('.slide-remove').checked;
+          if (removed) continue;
+
+          let image = existingImage;
+          if (file) {
+            if (!file.type || !file.type.startsWith('image/')) {
+              rowErrors.push(`${rowLabel} ${i + 1}: فایل انتخابی عکس نیست، عکس قبلی نگه داشته شد.`);
+            } else {
+              setStatus(statusId, 'busy', `در حال آپلود عکس ${rowLabel} ${i + 1}...`);
+              try {
+                image = await ghUploadImage(file);
+              } catch (imgErr) {
+                rowErrors.push(`${rowLabel} ${i + 1}: ${errMsg(imgErr)} — عکس قبلی نگه داشته شد.`);
+                // keep existingImage, don't block the other rows
+              }
+            }
+          }
+          if (!image && !label) continue; // fully empty row, skip
+          slides.push({ label, image });
+        }
+
+        if (!slides.length) { setStatus(statusId, 'err', `حداقل یه ${itemNamePersian} با عکس یا متن لازمه.`); return; }
+
+        setStatus(statusId, 'busy', 'در حال ذخیره تنظیمات...');
+        const patch = {};
+        patch[configKey] = slides;
+        await saveConfigPatch(patch);
+        setStatus(statusId, 'ok',
+          rowErrors.length
+            ? `${itemNamePersian} ذخیره شدن، ولی: \n` + rowErrors.join('\n')
+            : `${itemNamePersian} ذخیره شدن 🎉`);
+      } catch (e) {
+        setStatus(statusId, 'err', 'خطا: ' + errMsg(e));
+      }
+    });
+  }
+
+  wireSlideSection('storySlides', 'storyRows', 'loadStoriesBtn', 'saveStoriesBtn', 'storiesStatus', 'استوری', 'استوری‌ها');
+  wireSlideSection('heroSlides', 'slideRows', 'loadSlidesBtn', 'saveHeaderBtn', 'headerStatus', 'کارت', 'کارت‌های هدر');
 
   // ---------- List / delete ----------
   async function refreshList(){

@@ -857,9 +857,11 @@
         }
         if (hint) hint.style.display = 'none';
       }
-      if (Array.isArray(cfg.headerSlides) && cfg.headerSlides.length) {
-        renderAndHydrateStories(cfg.headerSlides);
-        renderHero(cfg.headerSlides);
+      if (Array.isArray(cfg.storySlides) && cfg.storySlides.length) {
+        renderAndHydrateStories(cfg.storySlides);
+      }
+      if (Array.isArray(cfg.heroSlides) && cfg.heroSlides.length) {
+        renderHero(cfg.heroSlides);
       }
     })
     .catch(() => {});
