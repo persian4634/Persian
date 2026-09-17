@@ -59,19 +59,34 @@
   .round-btn svg{width:18px;height:18px;stroke:var(--text);}
   .round-btn.active svg{stroke:var(--blue);}
 
-  /* ---- Stories row (auto-moving carousel, Instagram-style) ---- */
-  .stories-wrap{
-    overflow:hidden;padding:8px 0 14px;position:relative;
-  }
-  .stories-track{
-    display:flex;gap:18px;width:max-content;padding:0 20px;
-    animation:storiesScroll 26s linear infinite;
-  }
-  .stories-wrap.paused .stories-track{animation-play-state:paused;}
-  @keyframes storiesScroll{
+  /* ---- Hero banner (big auto-moving carousel, sits above the story row) ---- */
+  .hero-wrap{overflow:hidden;padding:16px 0 6px;}
+  .hero-track{display:flex;gap:14px;width:max-content;padding:0 20px;animation:heroScroll 34s linear infinite;direction:ltr;}
+  .hero-wrap.paused .hero-track{animation-play-state:paused;}
+  @keyframes heroScroll{
     from{transform:translateX(0);}
     to{transform:translateX(-50%);}
   }
+  .hero-card{
+    flex:0 0 auto;width:170px;height:290px;border-radius:24px;
+    background:linear-gradient(155deg,var(--h1,#5FCFC0),var(--h2,#1E7E76));
+    box-shadow:var(--shadow);position:relative;overflow:hidden;
+    display:flex;flex-direction:column;justify-content:space-between;padding:18px;
+    background-size:cover;background-position:center;
+    direction:rtl;
+  }
+  .hero-card::after{content:'';position:absolute;inset:0;background:linear-gradient(0deg, rgba(0,0,0,.42), rgba(0,0,0,0) 55%);}
+  .hero-card .hero-ico,.hero-card .hero-label{position:relative;z-index:1;}
+  .hero-card .hero-ico{width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;}
+  .hero-card .hero-ico svg{width:20px;height:20px;stroke:#fff;}
+  .hero-card .hero-label{color:#fff;font-size:20px;font-weight:800;}
+
+  /* ---- Stories row (static, swipe-to-scroll, Instagram-style) ---- */
+  .stories-wrap{
+    display:flex;gap:18px;overflow-x:auto;padding:8px 20px 14px;
+    -webkit-overflow-scrolling:touch;scrollbar-width:none;
+  }
+  .stories-wrap::-webkit-scrollbar{display:none;}
   .story-item{flex:0 0 auto;width:74px;text-align:center;background:none;border:none;font-family:inherit;padding:0;}
   .story-ring{
     width:74px;height:74px;border-radius:50%;padding:3px;box-sizing:border-box;
@@ -88,6 +103,29 @@
   .story-item span{
     display:block;margin-top:7px;font-size:11.5px;font-weight:600;color:var(--text);
     max-width:76px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+
+  /* ---- Full-screen story viewer ---- */
+  .story-viewer{
+    position:fixed;inset:0;z-index:100;background:#000;
+    opacity:0;visibility:hidden;transition:opacity .25s ease;
+  }
+  .story-viewer.open{opacity:1;visibility:visible;}
+  .story-viewer-media{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background-size:cover;background-position:center;}
+  .story-viewer-media img{max-width:100%;max-height:100%;object-fit:contain;display:block;}
+  .story-viewer-top{
+    position:absolute;top:0;left:0;right:0;z-index:2;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:calc(14px + env(safe-area-inset-top)) 16px 30px;
+    background:linear-gradient(180deg, rgba(0,0,0,.55), transparent);
+  }
+  .story-viewer-title{color:#fff;font-weight:700;font-size:15px;}
+  .story-viewer-close{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.2);border:none;display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
+  .story-viewer-close svg{width:15px;height:15px;stroke:#fff;}
+  .story-viewer-caption{
+    position:absolute;left:0;right:0;bottom:0;z-index:2;color:#fff;font-size:13px;line-height:1.85;
+    padding:26px 20px calc(20px + env(safe-area-inset-bottom));
+    background:linear-gradient(0deg, rgba(0,0,0,.6), transparent);
   }
 
   .section{padding:20px 20px 0;}
@@ -290,15 +328,32 @@
     <div class="logo">پرشین</div>
   </header>
 
-  <!-- Auto-moving, Instagram-style story row (tap to pause/interact) -->
-  <div class="stories-wrap" id="storiesWrap">
-    <div class="stories-track" id="storiesTrack">
+  <!-- Auto-moving hero banner (big cards, loops continuously). Rendered
+       twice back-to-back directly in HTML (not only by JS) so it never
+       shows blank while the page loads; the CSS animation shifts the row
+       by exactly 50% (= one copy) so it loops with no jump/no gap. -->
+  <div class="hero-wrap" id="heroWrap">
+    <div class="hero-track" id="heroTrack">
+      <div class="hero-card" style="--h1:#F4C452;--h2:#C98A1E;"><div class="hero-ico"><svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.3" fill="#fff" stroke="none"/></svg></div><div class="hero-label">بدلیجات</div></div>
+      <div class="hero-card" style="--h1:#C782D9;--h2:#6E3E9C;"><div class="hero-ico"><svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><path d="M4 12c3-4 6-4 8 0s5 4 8 0"/></svg></div><div class="hero-label">کش و کلیپس</div></div>
+      <div class="hero-card" style="--h1:#5FCFC0;--h2:#1E7E76;"><div class="hero-ico"><svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><circle cx="7" cy="13" r="3.2"/><circle cx="17" cy="13" r="3.2"/><path d="M10.2 13h3.6M3.6 13l1.5-5h13.8l1.5 5"/></svg></div><div class="hero-label">عینک آفتابی</div></div>
+      <div class="hero-card" style="--h1:#E7727E;--h2:#8C2E3D;"><div class="hero-ico"><svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><circle cx="8" cy="8" r="3.8"/><path d="M10.7 10.7l8.3 8.3M15.4 15.4l1.8-1.8M17.9 17.9l1.8-1.8"/></svg></div><div class="hero-label">جاکلیدی</div></div>
+      <div class="hero-card" style="--h1:#6E93F0;--h2:#2E4CA8;"><div class="hero-ico"><svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><path d="M3 12h13l4 4M3 12l4-4M3 12l4 4"/></svg></div><div class="hero-label">ارسال ویژه</div></div>
+      <div class="hero-card" style="--h1:#F4C452;--h2:#C98A1E;"><div class="hero-ico"><svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.3" fill="#fff" stroke="none"/></svg></div><div class="hero-label">بدلیجات</div></div>
+      <div class="hero-card" style="--h1:#C782D9;--h2:#6E3E9C;"><div class="hero-ico"><svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><path d="M4 12c3-4 6-4 8 0s5 4 8 0"/></svg></div><div class="hero-label">کش و کلیپس</div></div>
+      <div class="hero-card" style="--h1:#5FCFC0;--h2:#1E7E76;"><div class="hero-ico"><svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><circle cx="7" cy="13" r="3.2"/><circle cx="17" cy="13" r="3.2"/><path d="M10.2 13h3.6M3.6 13l1.5-5h13.8l1.5 5"/></svg></div><div class="hero-label">عینک آفتابی</div></div>
+      <div class="hero-card" style="--h1:#E7727E;--h2:#8C2E3D;"><div class="hero-ico"><svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><circle cx="8" cy="8" r="3.8"/><path d="M10.7 10.7l8.3 8.3M15.4 15.4l1.8-1.8M17.9 17.9l1.8-1.8"/></svg></div><div class="hero-label">جاکلیدی</div></div>
+      <div class="hero-card" style="--h1:#6E93F0;--h2:#2E4CA8;"><div class="hero-ico"><svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><path d="M3 12h13l4 4M3 12l4-4M3 12l4 4"/></svg></div><div class="hero-label">ارسال ویژه</div></div>
+    </div>
+  </div>
+
+  <!-- Static, Instagram-style story row (does not auto-scroll; swipe to browse) -->
+  <div class="stories-wrap" id="storiesTrack">
     <div class="story-item" data-title="بدلیجات"><div class="story-ring" style="--c1:#F4C452;--c2:#C98A1E;"><div class="story-photo"><div class="story-photo-inner"><svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.3" fill="#fff" stroke="none"/></svg></div></div></div><span>بدلیجات</span></div>
     <div class="story-item" data-title="کش و کلیپس"><div class="story-ring" style="--c1:#C782D9;--c2:#6E3E9C;"><div class="story-photo"><div class="story-photo-inner"><svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><path d="M4 12c3-4 6-4 8 0s5 4 8 0"/></svg></div></div></div><span>کش و کلیپس</span></div>
     <div class="story-item" data-title="عینک آفتابی"><div class="story-ring" style="--c1:#5FCFC0;--c2:#1E7E76;"><div class="story-photo"><div class="story-photo-inner"><svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><circle cx="7" cy="13" r="3.2"/><circle cx="17" cy="13" r="3.2"/><path d="M10.2 13h3.6M3.6 13l1.5-5h13.8l1.5 5"/></svg></div></div></div><span>عینک آفتابی</span></div>
     <div class="story-item" data-title="جاکلیدی"><div class="story-ring" style="--c1:#E7727E;--c2:#8C2E3D;"><div class="story-photo"><div class="story-photo-inner"><svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><circle cx="8" cy="8" r="3.8"/><path d="M10.7 10.7l8.3 8.3M15.4 15.4l1.8-1.8M17.9 17.9l1.8-1.8"/></svg></div></div></div><span>جاکلیدی</span></div>
     <div class="story-item" data-title="ارسال ویژه"><div class="story-ring" style="--c1:#6E93F0;--c2:#2E4CA8;"><div class="story-photo"><div class="story-photo-inner"><svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><path d="M3 12h13l4 4M3 12l4-4M3 12l4 4"/></svg></div></div></div><span>ارسال ویژه</span></div>
-    </div>
   </div>
 
   <section class="section">
@@ -513,6 +568,20 @@
   </div>
 </div>
 
+<!-- Full-screen story viewer -->
+<div class="story-viewer" id="storyViewer">
+  <div class="story-viewer-media" id="storyViewerMedia">
+    <img id="storyViewerImg" alt="" style="display:none;">
+  </div>
+  <div class="story-viewer-top">
+    <button class="story-viewer-close" id="storyViewerClose">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <div class="story-viewer-title" id="storyViewerTitle"></div>
+  </div>
+  <div class="story-viewer-caption" id="storyViewerCaption" style="display:none;"></div>
+</div>
+
 <script>
   const root = document.documentElement;
   function setTheme(dark){
@@ -575,28 +644,43 @@
   modalOverlay.addEventListener('click', (e)=>{ if(e.target === modalOverlay) modalOverlay.classList.remove('open'); });
 
   const track = document.getElementById('storiesTrack');
-  // Tapping any story opens it — shows its photo (if it has one) plus
-  // title and description.
+  const storyViewer = document.getElementById('storyViewer');
+  const storyViewerMedia = document.getElementById('storyViewerMedia');
+  const storyViewerImg = document.getElementById('storyViewerImg');
+  const storyViewerTitle = document.getElementById('storyViewerTitle');
+  const storyViewerCaption = document.getElementById('storyViewerCaption');
+
+  function openStoryViewer(item){
+    const image = item.dataset.image;
+    if (image) {
+      storyViewerImg.src = encodeURI(image);
+      storyViewerImg.style.display = 'block';
+      storyViewerMedia.style.backgroundImage = '';
+    } else {
+      // No real photo yet: fall back to the story's own gradient, full-screen.
+      storyViewerImg.style.display = 'none';
+      storyViewerImg.src = '';
+      storyViewerMedia.style.backgroundImage = `linear-gradient(155deg, ${item.dataset.c1 || '#5FCFC0'}, ${item.dataset.c2 || '#1E7E76'})`;
+    }
+    storyViewerTitle.textContent = item.dataset.title || '';
+    const hasDesc = !!item.dataset.desc;
+    storyViewerCaption.style.display = hasDesc ? 'block' : 'none';
+    storyViewerCaption.textContent = hasDesc ? item.dataset.desc : '';
+    storyViewer.classList.add('open');
+  }
+  function closeStoryViewer(){
+    storyViewer.classList.remove('open');
+    storyViewerImg.src = '';
+  }
+  document.getElementById('storyViewerClose').addEventListener('click', closeStoryViewer);
+  storyViewer.addEventListener('click', (e) => { if (e.target === storyViewer) closeStoryViewer(); });
+
+  // Tapping any story opens it full-screen — the whole photo is shown
+  // (never cropped), with the title and description over it.
   track.addEventListener('click', (e) => {
     const item = e.target.closest('.story-item');
     if (!item) return;
-    const image = item.dataset.image;
-    if (image) {
-      modalPhoto.style.display = 'block';
-      modalPhoto.style.backgroundImage = `url('${encodeURI(image)}')`;
-      modalIco.style.display = 'none';
-    } else {
-      modalPhoto.style.display = 'none';
-      modalIco.style.display = 'flex';
-      modalIco.style.background = '#4C6FF0';
-      modalIco.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M12 2l2.6 5.9L21 9l-4.8 4 1.4 6.4L12 16.7 6.4 19.4 7.8 13 3 9l6.4-1.1z"/></svg>';
-    }
-    modalEyebrow.textContent = '';
-    modalTitle.textContent = item.dataset.title || '';
-    const hasDesc = !!item.dataset.desc;
-    modalDesc.style.display = hasDesc ? 'block' : 'none';
-    modalDesc.textContent = hasDesc ? item.dataset.desc : '';
-    modalOverlay.classList.add('open');
+    openStoryViewer(item);
   });
 
   function escapeHtml(str){
@@ -613,16 +697,13 @@
   ];
   function renderStories(stories){
     const list = (stories && stories.length) ? stories : defaultStories;
-    // Render the list twice back-to-back so the CSS marquee animation
-    // (which shifts by exactly one copy's width) loops seamlessly.
-    const doubled = list.concat(list);
-    track.innerHTML = doubled.map((s, i) => {
+    track.innerHTML = list.map((s, i) => {
       const ring = `--c1:${s.c1 || '#5FCFC0'};--c2:${s.c2 || '#1E7E76'};`;
       const photoBg = s.image ? `background-image:url('${encodeURI(s.image)}');` : '';
       const icon = s.image ? '' : (s.icon || '');
       const desc = s.desc ? ` data-desc="${escapeHtml(s.desc)}"` : '';
       const image = s.image ? ` data-image="${escapeHtml(s.image)}"` : '';
-      return `<div class="story-item" data-index="${i % list.length}" data-title="${escapeHtml(s.label || '')}"${desc}${image}>
+      return `<div class="story-item" data-index="${i}" data-title="${escapeHtml(s.label || '')}" data-c1="${s.c1 || '#5FCFC0'}" data-c2="${s.c2 || '#1E7E76'}"${desc}${image}>
         <div class="story-ring" style="${ring}"><div class="story-photo"><div class="story-photo-inner" style="${photoBg}">${icon}</div></div></div>
         <span>${escapeHtml(s.label || '')}</span>
       </div>`;
@@ -632,19 +713,17 @@
   // Render the row immediately (icons show right away, nothing waits), then
   // stream each real photo in for its own circle the moment that photo
   // finishes loading — the first one ready shows first instead of the whole
-  // row waiting on the slowest image. Both copies of a story (original +
-  // looped duplicate) share a data-index, so both get updated together.
+  // row waiting on the slowest image.
   function hydrateStoryImages(stories){
+    const items = track.querySelectorAll('.story-item');
     (stories || []).forEach((s, i) => {
       if (!s.image) return;
+      const el = items[i];
+      const inner = el && el.querySelector('.story-photo-inner');
+      if (!inner) return;
       const url = encodeURI(s.image);
       const img = new Image();
-      img.onload = () => {
-        track.querySelectorAll(`.story-item[data-index="${i}"] .story-photo-inner`).forEach(inner => {
-          inner.style.backgroundImage = `url('${url}')`;
-          inner.innerHTML = '';
-        });
-      };
+      img.onload = () => { inner.style.backgroundImage = `url('${url}')`; inner.innerHTML = ''; };
       img.src = url; // onerror: leave the icon in place, no broken image
     });
   }
@@ -652,20 +731,41 @@
     renderStories(stories);
     hydrateStoryImages(stories);
   }
-  // Build the (doubled, loop-ready) story row immediately, using the demo
-  // set; if admin has set custom header slides they'll replace this once
-  // config.json is fetched below.
-  renderStories();
 
-  // Auto-moving carousel: the row scrolls itself via CSS animation. Pause
-  // it while the user is pressing/dragging a story so it doesn't fight
-  // their touch, then resume a moment after they let go.
-  const storiesWrap = document.getElementById('storiesWrap');
-  let resumeTimer;
-  function pauseStories(){ storiesWrap.classList.add('paused'); clearTimeout(resumeTimer); }
-  function resumeStoriesSoon(){ clearTimeout(resumeTimer); resumeTimer = setTimeout(() => storiesWrap.classList.remove('paused'), 1500); }
-  ['touchstart','pointerdown'].forEach(evt => storiesWrap.addEventListener(evt, pauseStories, {passive:true}));
-  ['touchend','pointerup','pointercancel'].forEach(evt => storiesWrap.addEventListener(evt, resumeStoriesSoon, {passive:true}));
+  /* ---- Hero banner: big auto-moving cards above the story row ---- */
+  const heroTrack = document.getElementById('heroTrack');
+  const heroWrap = document.getElementById('heroWrap');
+  const heroSlides = [
+    { label:'بدلیجات', h1:'#F4C452', h2:'#C98A1E', icon:'<svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.3" fill="#fff" stroke="none"/></svg>' },
+    { label:'کش و کلیپس', h1:'#C782D9', h2:'#6E3E9C', icon:'<svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><path d="M4 12c3-4 6-4 8 0s5 4 8 0"/></svg>' },
+    { label:'عینک آفتابی', h1:'#5FCFC0', h2:'#1E7E76', icon:'<svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><circle cx="7" cy="13" r="3.2"/><circle cx="17" cy="13" r="3.2"/><path d="M10.2 13h3.6M3.6 13l1.5-5h13.8l1.5 5"/></svg>' },
+    { label:'جاکلیدی', h1:'#E7727E', h2:'#8C2E3D', icon:'<svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><circle cx="8" cy="8" r="3.8"/><path d="M10.7 10.7l8.3 8.3M15.4 15.4l1.8-1.8M17.9 17.9l1.8-1.8"/></svg>' },
+    { label:'ارسال ویژه', h1:'#6E93F0', h2:'#2E4CA8', icon:'<svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><path d="M3 12h13l4 4M3 12l4-4M3 12l4 4"/></svg>' }
+  ];
+  function renderHero(slides){
+    let list = (slides && slides.length) ? slides.slice() : heroSlides;
+    const base = list.slice();
+    while (list.length < 5) { list = list.concat(base); } // pad short admin lists so the loop never runs dry
+    // Doubled list + CSS animation that shifts exactly 50% = one full copy,
+    // so the row loops from the last slide straight back into the first
+    // one with no jump and no empty gap, at a slow constant speed.
+    const doubled = list.concat(list);
+    heroTrack.innerHTML = doubled.map(s => {
+      const bg = s.image ? `background-image:url('${encodeURI(s.image)}');` : `--h1:${s.h1 || '#5FCFC0'};--h2:${s.h2 || '#1E7E76'};`;
+      return `<div class="hero-card" style="${bg}">
+        <div class="hero-ico">${s.icon || ''}</div>
+        <div class="hero-label">${escapeHtml(s.label || '')}</div>
+      </div>`;
+    }).join('');
+  }
+  // The static markup above already shows the default set; renderHero()
+  // is only called again below if admin-configured slides come in.
+  // Pause the drift only while the user is actively pressing on it.
+  let heroResumeTimer;
+  function pauseHero(){ heroWrap.classList.add('paused'); clearTimeout(heroResumeTimer); }
+  function resumeHeroSoon(){ clearTimeout(heroResumeTimer); heroResumeTimer = setTimeout(() => heroWrap.classList.remove('paused'), 1200); }
+  ['touchstart','pointerdown'].forEach(evt => heroWrap.addEventListener(evt, pauseHero, {passive:true}));
+  ['touchend','pointerup','pointercancel'].forEach(evt => heroWrap.addEventListener(evt, resumeHeroSoon, {passive:true}));
 
   /* ---- Load posts (products / announcements / showcase cards) added from admin.html ---- */
   fetch('data/posts.json', {cache:'no-store'})
@@ -759,6 +859,7 @@
       }
       if (Array.isArray(cfg.headerSlides) && cfg.headerSlides.length) {
         renderAndHydrateStories(cfg.headerSlides);
+        renderHero(cfg.headerSlides);
       }
     })
     .catch(() => {});
