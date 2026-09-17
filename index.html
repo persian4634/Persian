@@ -59,22 +59,29 @@
   .round-btn svg{width:18px;height:18px;stroke:var(--text);}
   .round-btn.active svg{stroke:var(--blue);}
 
-  /* ---- Carousel (auto-moving) ---- */
-  .carousel-wrap{overflow:hidden;padding:4px 0 6px;-webkit-mask-image:linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);mask-image:linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);}
-  .carousel{display:flex;gap:12px;width:max-content;animation:scrollX 26s linear infinite;padding:0 20px;direction:ltr;}
-  .carousel.paused{animation-play-state:paused;}
-  @keyframes scrollX{from{transform:translateX(0);}to{transform:translateX(-50%);}}
-  .cslide{
-    flex:0 0 auto;width:150px;height:220px;border-radius:22px;
-    position:relative;overflow:hidden;box-shadow:var(--shadow);
-    background-color:#3a3a3a;
-    background-image:linear-gradient(160deg,var(--c1,#555),var(--c2,#333));
-    background-size:cover;background-position:center;
+  /* ---- Stories row (static, swipe-to-scroll, Instagram-style) ---- */
+  .stories-wrap{
+    display:flex;gap:18px;overflow-x:auto;padding:8px 20px 14px;
+    -webkit-overflow-scrolling:touch;scrollbar-width:none;
   }
-  .cslide::after{content:"";position:absolute;inset:0;background:linear-gradient(0deg, rgba(0,0,0,0.55), rgba(0,0,0,0) 55%);}
-  .cslide svg{position:absolute;top:20px;left:20px;width:30px;height:30px;opacity:.9;z-index:1;}
-  .cslide span{position:absolute;bottom:16px;right:16px;left:16px;color:#fff;font-weight:700;font-size:15px;z-index:1;text-align:right;direction:rtl;}
-  .cslide{direction:rtl;}
+  .stories-wrap::-webkit-scrollbar{display:none;}
+  .story-item{flex:0 0 auto;width:74px;text-align:center;background:none;border:none;font-family:inherit;padding:0;}
+  .story-ring{
+    width:74px;height:74px;border-radius:50%;padding:3px;box-sizing:border-box;
+    background:linear-gradient(135deg,var(--c1,#5FCFC0),var(--c2,#1E7E76));
+    display:flex;align-items:center;justify-content:center;
+  }
+  .story-photo{width:100%;height:100%;border-radius:50%;background:var(--card);padding:2.5px;box-sizing:border-box;}
+  .story-photo-inner{
+    width:100%;height:100%;border-radius:50%;background-color:#3a3a3a;
+    background-size:cover;background-position:center;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .story-photo-inner svg{width:24px;height:24px;opacity:.95;}
+  .story-item span{
+    display:block;margin-top:7px;font-size:11.5px;font-weight:600;color:var(--text);
+    max-width:76px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
 
   .section{padding:20px 20px 0;}
 
@@ -275,20 +282,13 @@
     <div class="logo">پرشین</div>
   </header>
 
-  <!-- Auto-moving carousel -->
-  <div class="carousel-wrap">
-    <div class="carousel" id="carouselTrack">
-      <div class="cslide" style="--c1:#F4C452;--c2:#C98A1E;"><svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.3" fill="#fff" stroke="none"/></svg><span>بدلیجات</span></div>
-      <div class="cslide" style="--c1:#C782D9;--c2:#6E3E9C;"><svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><path d="M4 12c3-4 6-4 8 0s5 4 8 0"/></svg><span>کش و کلیپس</span></div>
-      <div class="cslide" style="--c1:#5FCFC0;--c2:#1E7E76;"><svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><circle cx="7" cy="13" r="3.2"/><circle cx="17" cy="13" r="3.2"/><path d="M10.2 13h3.6M3.6 13l1.5-5h13.8l1.5 5"/></svg><span>عینک آفتابی</span></div>
-      <div class="cslide" style="--c1:#E7727E;--c2:#8C2E3D;"><svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><circle cx="8" cy="8" r="3.8"/><path d="M10.7 10.7l8.3 8.3M15.4 15.4l1.8-1.8M17.9 17.9l1.8-1.8"/></svg><span>جاکلیدی</span></div>
-      <div class="cslide" style="--c1:#6E93F0;--c2:#2E4CA8;"><svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><path d="M3 12h13l4 4M3 12l4-4M3 12l4 4"/></svg><span>ارسال ویژه</span></div>
-      <div class="cslide" style="--c1:#F4C452;--c2:#C98A1E;"><svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.3" fill="#fff" stroke="none"/></svg><span>بدلیجات</span></div>
-      <div class="cslide" style="--c1:#C782D9;--c2:#6E3E9C;"><svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><path d="M4 12c3-4 6-4 8 0s5 4 8 0"/></svg><span>کش و کلیپس</span></div>
-      <div class="cslide" style="--c1:#5FCFC0;--c2:#1E7E76;"><svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><circle cx="7" cy="13" r="3.2"/><circle cx="17" cy="13" r="3.2"/><path d="M10.2 13h3.6M3.6 13l1.5-5h13.8l1.5 5"/></svg><span>عینک آفتابی</span></div>
-      <div class="cslide" style="--c1:#E7727E;--c2:#8C2E3D;"><svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><circle cx="8" cy="8" r="3.8"/><path d="M10.7 10.7l8.3 8.3M15.4 15.4l1.8-1.8M17.9 17.9l1.8-1.8"/></svg><span>جاکلیدی</span></div>
-      <div class="cslide" style="--c1:#6E93F0;--c2:#2E4CA8;"><svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><path d="M3 12h13l4 4M3 12l4-4M3 12l4 4"/></svg><span>ارسال ویژه</span></div>
-    </div>
+  <!-- Static, Instagram-style story row (does not auto-scroll; swipe to browse) -->
+  <div class="stories-wrap" id="storiesTrack">
+    <div class="story-item" data-title="بدلیجات"><div class="story-ring" style="--c1:#F4C452;--c2:#C98A1E;"><div class="story-photo"><div class="story-photo-inner"><svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.3" fill="#fff" stroke="none"/></svg></div></div></div><span>بدلیجات</span></div>
+    <div class="story-item" data-title="کش و کلیپس"><div class="story-ring" style="--c1:#C782D9;--c2:#6E3E9C;"><div class="story-photo"><div class="story-photo-inner"><svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><path d="M4 12c3-4 6-4 8 0s5 4 8 0"/></svg></div></div></div><span>کش و کلیپس</span></div>
+    <div class="story-item" data-title="عینک آفتابی"><div class="story-ring" style="--c1:#5FCFC0;--c2:#1E7E76;"><div class="story-photo"><div class="story-photo-inner"><svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><circle cx="7" cy="13" r="3.2"/><circle cx="17" cy="13" r="3.2"/><path d="M10.2 13h3.6M3.6 13l1.5-5h13.8l1.5 5"/></svg></div></div></div><span>عینک آفتابی</span></div>
+    <div class="story-item" data-title="جاکلیدی"><div class="story-ring" style="--c1:#E7727E;--c2:#8C2E3D;"><div class="story-photo"><div class="story-photo-inner"><svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><circle cx="8" cy="8" r="3.8"/><path d="M10.7 10.7l8.3 8.3M15.4 15.4l1.8-1.8M17.9 17.9l1.8-1.8"/></svg></div></div></div><span>جاکلیدی</span></div>
+    <div class="story-item" data-title="ارسال ویژه"><div class="story-ring" style="--c1:#6E93F0;--c2:#2E4CA8;"><div class="story-photo"><div class="story-photo-inner"><svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><path d="M3 12h13l4 4M3 12l4-4M3 12l4 4"/></svg></div></div></div><span>ارسال ویژه</span></div>
   </div>
 
   <section class="section">
@@ -559,44 +559,51 @@
   document.getElementById('closeModal').addEventListener('click', ()=> modalOverlay.classList.remove('open'));
   modalOverlay.addEventListener('click', (e)=>{ if(e.target === modalOverlay) modalOverlay.classList.remove('open'); });
 
-  const track = document.getElementById('carouselTrack');
-  const pause = ()=> track.classList.add('paused');
-  const resume = ()=> track.classList.remove('paused');
-  track.addEventListener('touchstart', pause, {passive:true});
-  track.addEventListener('touchend', resume, {passive:true});
-  track.addEventListener('mouseenter', pause);
-  track.addEventListener('mouseleave', resume);
+  const track = document.getElementById('storiesTrack');
+  // Tapping a story opens the modal, same as a showcase card, but only when
+  // that story has a description set in admin (plain stories with just a
+  // photo + label aren't clickable).
+  track.addEventListener('click', (e) => {
+    const item = e.target.closest('.story-item');
+    if (!item || !item.dataset.desc) return;
+    modalIco.style.background = '#4C6FF0';
+    modalIco.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M12 2l2.6 5.9L21 9l-4.8 4 1.4 6.4L12 16.7 6.4 19.4 7.8 13 3 9l6.4-1.1z"/></svg>';
+    modalEyebrow.textContent = '';
+    modalTitle.textContent = item.dataset.title || '';
+    modalDesc.textContent = item.dataset.desc;
+    modalOverlay.classList.add('open');
+  });
 
   function escapeHtml(str){
     return String(str || '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   }
 
-  /* ---- Header carousel: shows demo slides immediately, swaps in real photos once loaded ---- */
-  const defaultHeaderSlides = [
+  /* ---- Story row: shows demo stories immediately, swaps in real photos/text once loaded ---- */
+  const defaultStories = [
     { label:'بدلیجات', c1:'#F4C452', c2:'#C98A1E', icon:'<svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.3" fill="#fff" stroke="none"/></svg>' },
     { label:'کش و کلیپس', c1:'#C782D9', c2:'#6E3E9C', icon:'<svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><path d="M4 12c3-4 6-4 8 0s5 4 8 0"/></svg>' },
     { label:'عینک آفتابی', c1:'#5FCFC0', c2:'#1E7E76', icon:'<svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><circle cx="7" cy="13" r="3.2"/><circle cx="17" cy="13" r="3.2"/><path d="M10.2 13h3.6M3.6 13l1.5-5h13.8l1.5 5"/></svg>' },
     { label:'جاکلیدی', c1:'#E7727E', c2:'#8C2E3D', icon:'<svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><circle cx="8" cy="8" r="3.8"/><path d="M10.7 10.7l8.3 8.3M15.4 15.4l1.8-1.8M17.9 17.9l1.8-1.8"/></svg>' },
     { label:'ارسال ویژه', c1:'#6E93F0', c2:'#2E4CA8', icon:'<svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><path d="M3 12h13l4 4M3 12l4-4M3 12l4 4"/></svg>' }
   ];
-  function renderCarousel(slides){
-    let list = (slides && slides.length) ? slides.slice() : defaultHeaderSlides;
-    const base = list.slice();
-    while (list.length < 5) { list = list.concat(base); } // pad short admin lists so the loop never runs dry
-    const doubled = list.concat(list); // duplicate for the seamless loop
-    track.innerHTML = doubled.map(s => {
-      const bg = s.image
-        ? `background-image:url('${encodeURI(s.image)}');`
-        : `--c1:${s.c1 || '#555'};--c2:${s.c2 || '#333'};`;
+  function renderStories(stories){
+    const list = (stories && stories.length) ? stories : defaultStories;
+    track.innerHTML = list.map(s => {
+      const ring = `--c1:${s.c1 || '#5FCFC0'};--c2:${s.c2 || '#1E7E76'};`;
+      const photoBg = s.image ? `background-image:url('${encodeURI(s.image)}');` : '';
       const icon = s.image ? '' : (s.icon || '');
-      return `<div class="cslide" style="${bg}">${icon}<span>${escapeHtml(s.label || '')}</span></div>`;
+      const desc = s.desc ? ` data-desc="${escapeHtml(s.desc)}"` : '';
+      return `<div class="story-item" data-title="${escapeHtml(s.label || '')}"${desc}>
+        <div class="story-ring" style="${ring}"><div class="story-photo"><div class="story-photo-inner" style="${photoBg}">${icon}</div></div></div>
+        <span>${escapeHtml(s.label || '')}</span>
+      </div>`;
     }).join('');
   }
 
-  // Preload every real header photo fully before swapping it into the moving
-  // carousel, so photos never appear half-downloaded while they scroll past.
-  // The default demo slides stay on screen (no blank gap) until the real
-  // photos are ready, then everything swaps in at once.
+  // Preload every real story photo fully before swapping it in, so photos
+  // never appear half-downloaded. The default demo stories stay on screen
+  // (no blank gap) until the real photos are ready, then everything swaps
+  // in at once.
   function preloadImage(url){
     return new Promise(resolve => {
       const img = new Image();
@@ -608,10 +615,10 @@
       setTimeout(done, 6000);
     });
   }
-  function preloadAndRenderCarousel(slides){
-    const urls = (slides || []).filter(s => s.image).map(s => encodeURI(s.image));
-    if (!urls.length) { renderCarousel(slides); return; }
-    Promise.all(urls.map(preloadImage)).then(() => renderCarousel(slides));
+  function preloadAndRenderStories(stories){
+    const urls = (stories || []).filter(s => s.image).map(s => encodeURI(s.image));
+    if (!urls.length) { renderStories(stories); return; }
+    Promise.all(urls.map(preloadImage)).then(() => renderStories(stories));
   }
 
   /* ---- Load posts (products / announcements / showcase cards) added from admin.html ---- */
@@ -696,7 +703,7 @@
         if (hint) hint.style.display = 'none';
       }
       if (Array.isArray(cfg.headerSlides) && cfg.headerSlides.length) {
-        preloadAndRenderCarousel(cfg.headerSlides);
+        preloadAndRenderStories(cfg.headerSlides);
       }
     })
     .catch(() => {});

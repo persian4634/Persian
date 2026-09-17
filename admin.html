@@ -127,11 +127,12 @@
       <div class="status" id="menuStatus"></div>
     </div>
     <div class="card">
-      <h2>اسلایدهای هدر (کاروسل بالای صفحه)</h2>
-      <p class="help">برای هر اسلاید یه عکس و یه متن کوتاه (که روی عکس نشون داده می‌شه) بذارید. عکس عمودی حدود ۶۰۰×۸۰۰ پیکسل بهترین نتیجه رو می‌ده. اگه عکس جدید انتخاب نکنید، عکس قبلی همون اسلاید حفظ می‌شه.</p>
-      <button class="btn btn-secondary" id="loadSlidesBtn">بارگذاری اسلایدهای فعلی</button>
+      <h2>استوری‌های زیر هدر (مثل اینستاگرام)</h2>
+      <p class="help">هر استوری یه دایره با عکس و یه متن کوتاه زیرشه. تعدادشون آزاده — هر چند تا بخوای می‌تونی اضافه یا حذف کنی. عکس مربعی حدود ۴۰۰×۴۰۰ پیکسل بهترین نتیجه رو می‌ده (چون دایره‌ای بریده می‌شه). توضیح اختیاریه؛ اگه بذاری، با زدن روی استوری تو سایت باز می‌شه.</p>
+      <button class="btn btn-secondary" id="loadSlidesBtn">بارگذاری استوری‌های فعلی</button>
       <div id="slideRows"></div>
-      <button class="btn btn-primary" id="saveHeaderBtn">ذخیره اسلایدهای هدر</button>
+      <button class="btn btn-secondary" id="addSlideBtn" style="display:none;">+ افزودن استوری جدید</button>
+      <button class="btn btn-primary" id="saveHeaderBtn">ذخیره استوری‌ها</button>
       <div class="status" id="headerStatus"></div>
     </div>
   </div>
@@ -414,13 +415,14 @@
       validateCfg();
       persistCfgIfNeeded();
       const rows = Array.from(document.querySelectorAll('.slide-row'));
-      if (!rows.length) { setStatus('headerStatus', 'err', 'اول «بارگذاری اسلایدهای فعلی» رو بزنید تا ردیف‌ها بیاد.'); return; }
+      if (!rows.length) { setStatus('headerStatus', 'err', 'اول «بارگذاری استوری‌های فعلی» رو بزنید تا ردیف‌ها بیاد.'); return; }
 
       const slides = [];
       const rowErrors = [];
       for (let i = 0; i < rows.length; i++) {
         const row = rows[i];
         const label = row.querySelector('.slide-label').value.trim();
+        const desc = row.querySelector('.slide-desc').value.trim();
         const file = row.querySelector('.slide-file').files[0];
         const existingImage = row.dataset.existingImage || '';
         const removed = row.querySelector('.slide-remove').checked;
@@ -429,32 +431,33 @@
         let image = existingImage;
         if (file) {
           if (!file.type || !file.type.startsWith('image/')) {
-            rowErrors.push(`اسلاید ${i + 1}: فایل انتخابی عکس نیست، عکس قبلی این اسلاید نگه داشته شد.`);
+            rowErrors.push(`استوری ${i + 1}: فایل انتخابی عکس نیست، عکس قبلی این استوری نگه داشته شد.`);
           } else {
-            setStatus('headerStatus', 'busy', `در حال آپلود عکس اسلاید ${i + 1}...`);
+            setStatus('headerStatus', 'busy', `در حال آپلود عکس استوری ${i + 1}...`);
             try {
-              // Header slides only ever show at ~150x220px, so a smaller,
-              // lighter file here means the carousel on the live site
-              // loads fast instead of flashing half-loaded photos.
-              image = await ghUploadImage(file, 700, 0.8);
+              // Story circles only ever show at ~74px (even on a big phone
+              // screen that's well under 250px), so a small, light file here
+              // means the row on the live site loads fast instead of
+              // flashing half-loaded photos.
+              image = await ghUploadImage(file, 480, 0.82);
             } catch (imgErr) {
-              rowErrors.push(`اسلاید ${i + 1}: ${errMsg(imgErr)} — عکس قبلی این اسلاید نگه داشته شد.`);
-              // keep existingImage, don't block the other slides
+              rowErrors.push(`استوری ${i + 1}: ${errMsg(imgErr)} — عکس قبلی این استوری نگه داشته شد.`);
+              // keep existingImage, don't block the other rows
             }
           }
         }
         if (!image && !label) continue; // fully empty row, skip
-        slides.push({ label, image });
+        slides.push({ label, image, desc });
       }
 
-      if (!slides.length) { setStatus('headerStatus', 'err', 'حداقل یه اسلاید با عکس یا متن لازمه.'); return; }
+      if (!slides.length) { setStatus('headerStatus', 'err', 'حداقل یه استوری با عکس یا متن لازمه.'); return; }
 
       setStatus('headerStatus', 'busy', 'در حال ذخیره تنظیمات...');
       await saveConfigPatch({ headerSlides: slides });
       setStatus('headerStatus', 'ok',
         rowErrors.length
-          ? 'اسلایدهای هدر ذخیره شدن، ولی: \n' + rowErrors.join('\n')
-          : 'اسلایدهای هدر ذخیره شدن 🎉');
+          ? 'استوری‌ها ذخیره شدن، ولی: \n' + rowErrors.join('\n')
+          : 'استوری‌ها ذخیره شدن 🎉');
     } catch (e) {
       setStatus('headerStatus', 'err', 'خطا: ' + errMsg(e));
     }
@@ -468,12 +471,14 @@
     wrap.style.marginTop = '12px';
     wrap.dataset.existingImage = (existing && existing.image) || '';
     wrap.innerHTML = `
-      <label style="margin-top:0;">اسلاید ${index + 1} — متن روی عکس</label>
+      <label style="margin-top:0;">استوری ${index + 1} — متن زیر عکس</label>
       <input type="text" class="slide-label" value="${(existing && existing.label) ? existing.label.replace(/"/g,'&quot;') : ''}" placeholder="مثلاً: بدلیجات">
-      <label>عکس ${existing && existing.image ? '(اگه عکس جدید انتخاب نکنید، همین عکس فعلی می‌مونه)' : ''}</label>
+      <label>توضیح (اختیاری — اگه پر باشه، با لمس استوری تو سایت باز می‌شه)</label>
+      <textarea class="slide-desc" placeholder="مثلاً: از بدلیجات ظریف تا جاکلیدی، با کیفیتی که حسش می‌کنی.">${(existing && existing.desc) ? existing.desc.replace(/</g,'&lt;') : ''}</textarea>
+      <label>عکس (مربعی) ${existing && existing.image ? '(اگه عکس جدید انتخاب نکنید، همین عکس فعلی می‌مونه)' : ''}</label>
       <input type="file" class="slide-file" accept="image/*">
       ${existing && existing.image ? `<img class="thumb" style="display:block;" src="${existing.image.startsWith('http') ? existing.image : ('https://raw.githubusercontent.com/' + els.owner.value.trim() + '/' + els.repo.value.trim() + '/' + els.branch.value.trim() + '/' + existing.image)}">` : ''}
-      <div class="check"><input type="checkbox" class="slide-remove"><label style="margin:0;color:var(--muted);font-weight:400;">حذف این اسلاید</label></div>
+      <div class="check"><input type="checkbox" class="slide-remove"><label style="margin:0;color:var(--muted);font-weight:400;">حذف این استوری</label></div>
     `;
     const fileInput = wrap.querySelector('.slide-file');
     fileInput.addEventListener('change', () => {
@@ -500,13 +505,20 @@
       const existingSlides = Array.isArray(config.headerSlides) ? config.headerSlides : [];
       const wrap = document.getElementById('slideRows');
       wrap.innerHTML = '';
-      for (let i = 0; i < 5; i++) {
-        wrap.appendChild(buildSlideRow(i, existingSlides[i]));
+      const rowCount = Math.max(existingSlides.length, 1);
+      for (let i = 0; i < rowCount; i++) {
+        wrap.appendChild(buildSlideRow(wrap.children.length, existingSlides[i]));
       }
+      document.getElementById('addSlideBtn').style.display = 'block';
       document.getElementById('headerStatus').className = 'status';
     } catch (e) {
       setStatus('headerStatus', 'err', 'خطا: ' + errMsg(e));
     }
+  });
+
+  document.getElementById('addSlideBtn').addEventListener('click', () => {
+    const wrap = document.getElementById('slideRows');
+    wrap.appendChild(buildSlideRow(wrap.children.length, null));
   });
 
   // ---------- List / delete ----------
