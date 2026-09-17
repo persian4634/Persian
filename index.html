@@ -67,7 +67,9 @@
   .cslide{
     flex:0 0 auto;width:150px;height:220px;border-radius:22px;
     position:relative;overflow:hidden;box-shadow:var(--shadow);
-    background:linear-gradient(160deg,var(--c1),var(--c2));
+    background-color:#3a3a3a;
+    background-image:linear-gradient(160deg,var(--c1,#555),var(--c2,#333));
+    background-size:cover;background-position:center;
   }
   .cslide::after{content:"";position:absolute;inset:0;background:linear-gradient(0deg, rgba(0,0,0,0.55), rgba(0,0,0,0) 55%);}
   .cslide svg{position:absolute;top:20px;left:20px;width:30px;height:30px;opacity:.9;z-index:1;}
@@ -280,7 +282,6 @@
       <div class="cslide" style="--c1:#5FCFC0;--c2:#1E7E76;"><svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><circle cx="7" cy="13" r="3.2"/><circle cx="17" cy="13" r="3.2"/><path d="M10.2 13h3.6M3.6 13l1.5-5h13.8l1.5 5"/></svg><span>عینک آفتابی</span></div>
       <div class="cslide" style="--c1:#E7727E;--c2:#8C2E3D;"><svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><circle cx="8" cy="8" r="3.8"/><path d="M10.7 10.7l8.3 8.3M15.4 15.4l1.8-1.8M17.9 17.9l1.8-1.8"/></svg><span>جاکلیدی</span></div>
       <div class="cslide" style="--c1:#6E93F0;--c2:#2E4CA8;"><svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><path d="M3 12h13l4 4M3 12l4-4M3 12l4 4"/></svg><span>ارسال ویژه</span></div>
-      <!-- duplicate set for seamless loop -->
       <div class="cslide" style="--c1:#F4C452;--c2:#C98A1E;"><svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.3" fill="#fff" stroke="none"/></svg><span>بدلیجات</span></div>
       <div class="cslide" style="--c1:#C782D9;--c2:#6E3E9C;"><svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><path d="M4 12c3-4 6-4 8 0s5 4 8 0"/></svg><span>کش و کلیپس</span></div>
       <div class="cslide" style="--c1:#5FCFC0;--c2:#1E7E76;"><svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><circle cx="7" cy="13" r="3.2"/><circle cx="17" cy="13" r="3.2"/><path d="M10.2 13h3.6M3.6 13l1.5-5h13.8l1.5 5"/></svg><span>عینک آفتابی</span></div>
@@ -350,6 +351,11 @@
   <section class="section" id="liveProductsSection" style="display:none;">
     <div class="eyebrow">محصولات جدید</div>
     <div class="live-grid" id="liveProductsGrid"></div>
+  </section>
+
+  <!-- Big photo+description showcase cards added from admin panel -->
+  <section class="section" id="liveShowcaseSection" style="display:none;">
+    <div id="liveShowcaseWrap"></div>
   </section>
 
   <section class="section">
@@ -560,16 +566,38 @@
   track.addEventListener('mouseenter', pause);
   track.addEventListener('mouseleave', resume);
 
-  /* ---- Load posts (products / announcements) added from admin.html ---- */
   function escapeHtml(str){
     return String(str || '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   }
+
+  /* ---- Header carousel: shows demo slides immediately, swaps in real photos once loaded ---- */
+  const defaultHeaderSlides = [
+    { label:'بدلیجات', c1:'#F4C452', c2:'#C98A1E', icon:'<svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.3" fill="#fff" stroke="none"/></svg>' },
+    { label:'کش و کلیپس', c1:'#C782D9', c2:'#6E3E9C', icon:'<svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><path d="M4 12c3-4 6-4 8 0s5 4 8 0"/></svg>' },
+    { label:'عینک آفتابی', c1:'#5FCFC0', c2:'#1E7E76', icon:'<svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><circle cx="7" cy="13" r="3.2"/><circle cx="17" cy="13" r="3.2"/><path d="M10.2 13h3.6M3.6 13l1.5-5h13.8l1.5 5"/></svg>' },
+    { label:'جاکلیدی', c1:'#E7727E', c2:'#8C2E3D', icon:'<svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><circle cx="8" cy="8" r="3.8"/><path d="M10.7 10.7l8.3 8.3M15.4 15.4l1.8-1.8M17.9 17.9l1.8-1.8"/></svg>' },
+    { label:'ارسال ویژه', c1:'#6E93F0', c2:'#2E4CA8', icon:'<svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><path d="M3 12h13l4 4M3 12l4-4M3 12l4 4"/></svg>' }
+  ];
+  function renderCarousel(slides){
+    const list = (slides && slides.length) ? slides : defaultHeaderSlides;
+    const doubled = list.concat(list); // duplicate for the seamless loop
+    track.innerHTML = doubled.map(s => {
+      const bg = s.image
+        ? `background-image:url('${encodeURI(s.image)}');`
+        : `--c1:${s.c1 || '#555'};--c2:${s.c2 || '#333'};`;
+      const icon = s.image ? '' : (s.icon || '');
+      return `<div class="cslide" style="${bg}">${icon}<span>${escapeHtml(s.label || '')}</span></div>`;
+    }).join('');
+  }
+
+  /* ---- Load posts (products / announcements / showcase cards) added from admin.html ---- */
   fetch('data/posts.json', {cache:'no-store'})
     .then(r => r.ok ? r.json() : [])
     .then(posts => {
       if (!Array.isArray(posts) || !posts.length) return;
       const products = posts.filter(p => p.type === 'product');
       const announcements = posts.filter(p => p.type === 'announcement');
+      const showcases = posts.filter(p => p.type === 'showcase');
 
       if (announcements.length) {
         document.getElementById('liveAnnouncementsSection').style.display = 'block';
@@ -595,10 +623,41 @@
             </div>
           </div>`).join('');
       }
+
+      if (showcases.length) {
+        document.getElementById('liveShowcaseSection').style.display = 'block';
+        document.getElementById('liveShowcaseWrap').innerHTML = showcases.map(s => {
+          const teaser = (s.desc || '').length > 90 ? s.desc.slice(0, 90) + '…' : (s.desc || '');
+          return `
+          <div class="pic-card" style="margin-bottom:16px;">
+            <div class="pic-thumb" style="${s.image ? `background-image:url('${encodeURI(s.image)}');background-size:cover;background-position:center;` : ''}"></div>
+            <div class="pic-text">
+              <div class="eyebrow">${escapeHtml(s.eyebrow)}</div>
+              <h3>${escapeHtml(s.title)}</h3>
+              <p>${escapeHtml(teaser)}</p>
+              <button class="fill-btn" data-showcase-id="${escapeHtml(s.id)}">توضیحات
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2.4"><path d="M9 6l6 6-6 6"/></svg>
+              </button>
+            </div>
+          </div>`;
+        }).join('');
+        document.querySelectorAll('[data-showcase-id]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const post = showcases.find(s => s.id === btn.dataset.showcaseId);
+            if (!post) return;
+            modalIco.style.background = '#4C6FF0';
+            modalIco.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M12 2l2.6 5.9L21 9l-4.8 4 1.4 6.4L12 16.7 6.4 19.4 7.8 13 3 9l6.4-1.1z"/></svg>';
+            modalEyebrow.textContent = post.eyebrow || '';
+            modalTitle.textContent = post.title;
+            modalDesc.textContent = post.desc;
+            modalOverlay.classList.add('open');
+          });
+        });
+      }
     })
     .catch(() => {});
 
-  /* ---- Load appearance settings (menu photo / header photos) set from admin.html ---- */
+  /* ---- Load appearance settings (menu photo / header slides) set from admin.html ---- */
   fetch('data/config.json', {cache:'no-store'})
     .then(r => r.ok ? r.json() : {})
     .then(cfg => {
@@ -612,13 +671,8 @@
         }
         if (hint) hint.style.display = 'none';
       }
-      if (Array.isArray(cfg.headerPhotos) && cfg.headerPhotos.length) {
-        document.querySelectorAll('.cslide').forEach((el, i) => {
-          const src = cfg.headerPhotos[i % cfg.headerPhotos.length];
-          el.style.backgroundImage = `url('${encodeURI(src)}')`;
-          el.style.backgroundSize = 'cover';
-          el.style.backgroundPosition = 'center';
-        });
+      if (Array.isArray(cfg.headerSlides) && cfg.headerSlides.length) {
+        renderCarousel(cfg.headerSlides);
       }
     })
     .catch(() => {});

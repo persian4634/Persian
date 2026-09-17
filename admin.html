@@ -93,19 +93,22 @@
   <!-- Add post -->
   <div class="tabpage active" id="tab-post">
     <div class="card">
-      <h2>افزودن محصول یا اطلاعیه</h2>
+      <h2>افزودن محصول، اطلاعیه یا کارت ویژه</h2>
       <label>نوع پست</label>
       <select id="postType">
-        <option value="product">محصول جدید</option>
+        <option value="product">محصول جدید (کارت کوچک تو گرید)</option>
+        <option value="showcase">کارت ویژه (عکس بزرگ + توضیحات، مثل بدلیجات/کش‌وکلیپس)</option>
         <option value="announcement">اطلاعیه / خبر</option>
       </select>
+      <label id="eyebrowLabel" style="display:none;">جمله کوتاه بالای عنوان (مثلاً: همیشه بدرخش)</label>
+      <input type="text" id="postEyebrow" placeholder="مثلاً: همیشه بدرخش" style="display:none;">
       <label>عنوان</label>
       <input type="text" id="postTitle" placeholder="مثلاً: گردنبند دلبرک">
       <label>توضیحات</label>
-      <textarea id="postDesc" placeholder="توضیح کوتاه..."></textarea>
+      <textarea id="postDesc" placeholder="توضیح کامل... (برای کارت ویژه، همینجا هم تو دکمه «توضیحات» نشون داده می‌شه)"></textarea>
       <label id="priceLabel">قیمت (تومان)</label>
       <input type="text" id="postPrice" placeholder="مثلاً: ۱۸۵,۰۰۰ تومان">
-      <label>عکس (اختیاری)</label>
+      <label id="postImageLabel">عکس (اختیاری)</label>
       <input type="file" id="postImage" accept="image/*">
       <img id="postPreview" class="thumb">
       <button class="btn btn-primary" id="publishBtn">انتشار پست</button>
@@ -117,17 +120,18 @@
   <div class="tabpage" id="tab-look">
     <div class="card">
       <h2>عکس صفحه منو</h2>
-      <p class="help">این عکس بالای منوی همبرگری (به‌جای رنگ ساده) نشون داده می‌شه.</p>
+      <p class="help">این عکس بالای منوی همبرگری (به‌جای رنگ ساده) نشون داده می‌شه. عکس افقی و حدود ۹۰۰×۴۵۰ پیکسل بهترین نتیجه رو می‌ده.</p>
       <input type="file" id="menuImage" accept="image/*">
       <img id="menuPreview" class="thumb">
       <button class="btn btn-primary" id="saveMenuBtn">ذخیره عکس منو</button>
       <div class="status" id="menuStatus"></div>
     </div>
     <div class="card">
-      <h2>عکس‌های هدر (کاروسل بالای صفحه)</h2>
-      <p class="help">تا ۵ عکس انتخاب کنید — به‌جای رنگ‌های ساده تو کاروسل بالای صفحه نشون داده می‌شن.</p>
-      <input type="file" id="headerImages" accept="image/*" multiple>
-      <button class="btn btn-primary" id="saveHeaderBtn">ذخیره عکس‌های هدر</button>
+      <h2>اسلایدهای هدر (کاروسل بالای صفحه)</h2>
+      <p class="help">برای هر اسلاید یه عکس و یه متن کوتاه (که روی عکس نشون داده می‌شه) بذارید. عکس عمودی حدود ۶۰۰×۸۰۰ پیکسل بهترین نتیجه رو می‌ده. اگه عکس جدید انتخاب نکنید، عکس قبلی همون اسلاید حفظ می‌شه.</p>
+      <button class="btn btn-secondary" id="loadSlidesBtn">بارگذاری اسلایدهای فعلی</button>
+      <div id="slideRows"></div>
+      <button class="btn btn-primary" id="saveHeaderBtn">ذخیره اسلایدهای هدر</button>
       <div class="status" id="headerStatus"></div>
     </div>
   </div>
@@ -301,10 +305,17 @@
   const postType = document.getElementById('postType');
   const priceLabel = document.getElementById('priceLabel');
   const postPriceInput = document.getElementById('postPrice');
+  const eyebrowLabel = document.getElementById('eyebrowLabel');
+  const postEyebrowInput = document.getElementById('postEyebrow');
+  const postImageLabel = document.getElementById('postImageLabel');
   postType.addEventListener('change', () => {
     const isProduct = postType.value === 'product';
+    const isShowcase = postType.value === 'showcase';
     priceLabel.style.display = isProduct ? 'block' : 'none';
     postPriceInput.style.display = isProduct ? 'block' : 'none';
+    eyebrowLabel.style.display = isShowcase ? 'block' : 'none';
+    postEyebrowInput.style.display = isShowcase ? 'block' : 'none';
+    postImageLabel.textContent = isShowcase ? 'عکس (الزامی برای کارت ویژه)' : 'عکس (اختیاری)';
   });
 
   const postImage = document.getElementById('postImage');
@@ -322,9 +333,11 @@
       const title = document.getElementById('postTitle').value.trim();
       const desc = document.getElementById('postDesc').value.trim();
       const price = document.getElementById('postPrice').value.trim();
+      const eyebrow = document.getElementById('postEyebrow').value.trim();
       const type = postType.value;
       const file = postImage.files[0];
       if (!title) { setStatus('postStatus', 'err', 'عنوان رو وارد کنید.'); return; }
+      if (type === 'showcase' && !file) { setStatus('postStatus', 'err', 'برای کارت ویژه یه عکس لازمه.'); return; }
 
       setStatus('postStatus', 'busy', 'در حال انتشار...');
       let imagePath = '';
@@ -341,6 +354,7 @@
         id: Date.now().toString(),
         type, title, desc,
         price: type === 'product' ? price : '',
+        eyebrow: type === 'showcase' ? eyebrow : '',
         image: imagePath,
         date: new Date().toISOString()
       });
@@ -353,6 +367,7 @@
       document.getElementById('postTitle').value = '';
       document.getElementById('postDesc').value = '';
       document.getElementById('postPrice').value = '';
+      document.getElementById('postEyebrow').value = '';
       postImage.value = '';
       document.getElementById('postPreview').style.display = 'none';
     } catch (e) {
@@ -398,16 +413,81 @@
     try {
       validateCfg();
       persistCfgIfNeeded();
-      const files = Array.from(document.getElementById('headerImages').files).slice(0, 5);
-      if (!files.length) { setStatus('headerStatus', 'err', 'اول یک یا چند عکس انتخاب کنید.'); return; }
-      const paths = [];
-      for (let i = 0; i < files.length; i++) {
-        setStatus('headerStatus', 'busy', `در حال آپلود عکس ${i + 1} از ${files.length}...`);
-        paths.push(await ghUploadImage(files[i]));
+      const rows = Array.from(document.querySelectorAll('.slide-row'));
+      if (!rows.length) { setStatus('headerStatus', 'err', 'اول «بارگذاری اسلایدهای فعلی» رو بزنید تا ردیف‌ها بیاد.'); return; }
+
+      const slides = [];
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const label = row.querySelector('.slide-label').value.trim();
+        const file = row.querySelector('.slide-file').files[0];
+        const existingImage = row.dataset.existingImage || '';
+        const removed = row.querySelector('.slide-remove').checked;
+        if (removed) continue;
+
+        let image = existingImage;
+        if (file) {
+          setStatus('headerStatus', 'busy', `در حال آپلود عکس اسلاید ${i + 1}...`);
+          image = await ghUploadImage(file);
+        }
+        if (!image && !label) continue; // fully empty row, skip
+        slides.push({ label, image });
       }
+
+      if (!slides.length) { setStatus('headerStatus', 'err', 'حداقل یه اسلاید با عکس یا متن لازمه.'); return; }
+
       setStatus('headerStatus', 'busy', 'در حال ذخیره تنظیمات...');
-      await saveConfigPatch({ headerPhotos: paths });
-      setStatus('headerStatus', 'ok', 'عکس‌های هدر ذخیره شدن 🎉');
+      await saveConfigPatch({ headerSlides: slides });
+      setStatus('headerStatus', 'ok', 'اسلایدهای هدر ذخیره شدن 🎉');
+    } catch (e) {
+      setStatus('headerStatus', 'err', 'خطا: ' + errMsg(e));
+    }
+  });
+
+  function buildSlideRow(index, existing){
+    const wrap = document.createElement('div');
+    wrap.className = 'slide-row';
+    wrap.style.borderTop = '1px solid #EEEEEC';
+    wrap.style.paddingTop = '12px';
+    wrap.style.marginTop = '12px';
+    wrap.dataset.existingImage = (existing && existing.image) || '';
+    wrap.innerHTML = `
+      <label style="margin-top:0;">اسلاید ${index + 1} — متن روی عکس</label>
+      <input type="text" class="slide-label" value="${(existing && existing.label) ? existing.label.replace(/"/g,'&quot;') : ''}" placeholder="مثلاً: بدلیجات">
+      <label>عکس ${existing && existing.image ? '(اگه عکس جدید انتخاب نکنید، همین عکس فعلی می‌مونه)' : ''}</label>
+      <input type="file" class="slide-file" accept="image/*">
+      ${existing && existing.image ? `<img class="thumb" style="display:block;" src="${existing.image.startsWith('http') ? existing.image : ('https://raw.githubusercontent.com/' + els.owner.value.trim() + '/' + els.repo.value.trim() + '/' + els.branch.value.trim() + '/' + existing.image)}">` : ''}
+      <div class="check"><input type="checkbox" class="slide-remove"><label style="margin:0;color:var(--muted);font-weight:400;">حذف این اسلاید</label></div>
+    `;
+    const fileInput = wrap.querySelector('.slide-file');
+    fileInput.addEventListener('change', () => {
+      const f = fileInput.files[0];
+      let img = wrap.querySelector('img.thumb');
+      if (!img) {
+        img = document.createElement('img');
+        img.className = 'thumb';
+        fileInput.insertAdjacentElement('afterend', img);
+      }
+      if (f) { img.src = URL.createObjectURL(f); img.style.display = 'block'; }
+    });
+    return wrap;
+  }
+
+  document.getElementById('loadSlidesBtn').addEventListener('click', async () => {
+    try {
+      validateCfg();
+      persistCfgIfNeeded();
+      setStatus('headerStatus', 'busy', 'در حال دریافت...');
+      const current = await ghGetFile('data/config.json');
+      let config = {};
+      if (current.exists) { try { config = JSON.parse(current.content); } catch(e){ config = {}; } }
+      const existingSlides = Array.isArray(config.headerSlides) ? config.headerSlides : [];
+      const wrap = document.getElementById('slideRows');
+      wrap.innerHTML = '';
+      for (let i = 0; i < 5; i++) {
+        wrap.appendChild(buildSlideRow(i, existingSlides[i]));
+      }
+      document.getElementById('headerStatus').className = 'status';
     } catch (e) {
       setStatus('headerStatus', 'err', 'خطا: ' + errMsg(e));
     }
@@ -430,7 +510,7 @@
           <div class="post-item">
             <div class="meta">
               <b>${p.title}</b>
-              <span>${p.type === 'product' ? 'محصول' : 'اطلاعیه'} ${p.price ? '· ' + p.price : ''}</span>
+              <span>${p.type === 'product' ? 'محصول' : p.type === 'showcase' ? 'کارت ویژه' : 'اطلاعیه'} ${p.price ? '· ' + p.price : ''}</span>
             </div>
             <button class="del-btn" data-id="${p.id}">حذف</button>
           </div>`).join('');
