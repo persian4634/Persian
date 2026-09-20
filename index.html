@@ -353,7 +353,7 @@
     display:flex;align-items:center;justify-content:center;
   }
   .modal-close svg{width:14px;height:14px;stroke:#C0424D;}
-  .modal-photo{width:100%;height:180px;border-radius:18px;background:linear-gradient(160deg,#E7B7C0,#C08A2E);background-size:cover;background-position:center;margin-bottom:16px;}
+  .modal-photo{width:100%;height:260px;border-radius:18px;background:linear-gradient(160deg,#E7B7C0,#C08A2E);background-size:cover;background-position:center top;margin-bottom:16px;}
   .modal-top{display:flex;align-items:center;gap:14px;margin-bottom:16px;}
   .modal-ico{width:52px;height:52px;border-radius:50%;flex:0 0 auto;display:flex;align-items:center;justify-content:center;}
   .modal-ico svg{width:24px;height:24px;stroke:#fff;}
@@ -923,6 +923,9 @@
         document.getElementById('liveShowcaseSection').style.display = 'block';
         document.getElementById('liveShowcaseWrap').innerHTML = showcases.map(s => {
           const teaser = (s.desc || '').length > 90 ? s.desc.slice(0, 90) + '…' : (s.desc || '');
+          const price = Number(s.price) || 0;
+          const orig = Number(s.originalPrice) || 0;
+          const hasDiscount = orig > price && price > 0;
           return `
           <div class="pic-card" style="margin-bottom:16px;">
             <div class="pic-thumb" style="${s.image ? `background-image:url('${encodeURI(s.image)}');background-size:cover;background-position:center;` : ''}"></div>
@@ -930,12 +933,26 @@
               <div class="eyebrow">${escapeHtml(s.eyebrow)}</div>
               <h3>${escapeHtml(s.title)}</h3>
               <p>${escapeHtml(teaser)}</p>
-              <button class="fill-btn" data-showcase-id="${escapeHtml(s.id)}">توضیحات
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="2.4"><path d="M9 6l6 6-6 6"/></svg>
-              </button>
+              ${price > 0 ? `
+              <div class="prod-price-row" style="margin-bottom:12px;">
+                ${hasDiscount ? `<span class="prod-old">${formatToman(orig)}</span>` : ''}
+                <span class="prod-final">${formatToman(price)}</span>
+              </div>` : ''}
+              <div style="display:flex;gap:8px;">
+                <button class="fill-btn" data-showcase-id="${escapeHtml(s.id)}">توضیحات
+                  <svg viewBox="0 0 24 24" fill="none" stroke-width="2.4"><path d="M9 6l6 6-6 6"/></svg>
+                </button>
+                ${price > 0 ? `<button class="fill-btn" style="background:var(--green);" data-showcase-add="${escapeHtml(s.id)}">افزودن به سبد</button>` : ''}
+              </div>
             </div>
           </div>`;
         }).join('');
+        document.querySelectorAll('[data-showcase-add]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const post = showcases.find(s => s.id === btn.dataset.showcaseAdd);
+            if (post) addToCart(post);
+          });
+        });
         document.querySelectorAll('[data-showcase-id]').forEach(btn => {
           btn.addEventListener('click', () => {
             const post = showcases.find(s => s.id === btn.dataset.showcaseId);

@@ -51,6 +51,7 @@
   .post-item .meta b{display:block;font-size:13.5px;margin-bottom:2px;}
   .post-item .meta span{color:var(--muted);}
   .del-btn{background:#FBE7E9;color:var(--red);border:none;border-radius:10px;padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer;flex:0 0 auto;}
+  .edit-btn{background:#EEF1FF;color:var(--blue);border:none;border-radius:10px;padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer;flex:0 0 auto;}
   .help{font-size:11.5px;color:var(--muted);line-height:1.8;margin:6px 0 0;}
   .thumb{width:100%;height:90px;border-radius:10px;object-fit:cover;margin-top:8px;display:none;background:#eee;}
   a.small{font-size:12px;color:var(--blue);}
@@ -116,6 +117,7 @@
       <input type="file" id="postImage" accept="image/*">
       <img id="postPreview" class="thumb">
       <button class="btn btn-primary" id="publishBtn">انتشار پست</button>
+      <button class="btn btn-secondary" id="cancelEditBtn" style="display:none;">لغو ویرایش</button>
       <div class="status" id="postStatus"></div>
     </div>
   </div>
@@ -352,12 +354,13 @@
   postType.addEventListener('change', () => {
     const isProduct = postType.value === 'product';
     const isShowcase = postType.value === 'showcase';
-    priceLabel.style.display = isProduct ? 'block' : 'none';
-    postPriceInput.style.display = isProduct ? 'block' : 'none';
-    origPriceLabel.style.display = isProduct ? 'block' : 'none';
-    postOrigPriceInput.style.display = isProduct ? 'block' : 'none';
-    ribbonLabel.style.display = isProduct ? 'block' : 'none';
-    postRibbonInput.style.display = isProduct ? 'block' : 'none';
+    const showPrice = isProduct || isShowcase;
+    priceLabel.style.display = showPrice ? 'block' : 'none';
+    postPriceInput.style.display = showPrice ? 'block' : 'none';
+    origPriceLabel.style.display = showPrice ? 'block' : 'none';
+    postOrigPriceInput.style.display = showPrice ? 'block' : 'none';
+    ribbonLabel.style.display = showPrice ? 'block' : 'none';
+    postRibbonInput.style.display = showPrice ? 'block' : 'none';
     eyebrowLabel.style.display = isShowcase ? 'block' : 'none';
     postEyebrowInput.style.display = isShowcase ? 'block' : 'none';
     postImageLabel.textContent = isShowcase ? 'عکس (الزامی برای کارت ویژه)' : 'عکس (اختیاری)';
@@ -371,7 +374,60 @@
     else { prev.style.display = 'none'; }
   });
 
-  document.getElementById('publishBtn').addEventListener('click', async () => {
+  let editingPostId = null;
+  let editingExistingImage = '';
+  const publishBtn = document.getElementById('publishBtn');
+  const cancelEditBtn = document.getElementById('cancelEditBtn');
+
+  function resetPostForm(){
+    editingPostId = null;
+    editingExistingImage = '';
+    document.getElementById('postTitle').value = '';
+    document.getElementById('postDesc').value = '';
+    document.getElementById('postPrice').value = '';
+    document.getElementById('postOrigPrice').value = '';
+    document.getElementById('postRibbon').value = '';
+    document.getElementById('postEyebrow').value = '';
+    postImage.value = '';
+    document.getElementById('postPreview').style.display = 'none';
+    publishBtn.textContent = 'انتشار پست';
+    cancelEditBtn.style.display = 'none';
+  }
+
+  function populateEditForm(post){
+    editingPostId = post.id;
+    editingExistingImage = post.image || '';
+    postType.value = post.type;
+    postType.dispatchEvent(new Event('change'));
+    document.getElementById('postTitle').value = post.title || '';
+    document.getElementById('postDesc').value = post.desc || '';
+    document.getElementById('postPrice').value = post.price || '';
+    document.getElementById('postOrigPrice').value = post.originalPrice || '';
+    document.getElementById('postRibbon').value = post.ribbon || '';
+    document.getElementById('postEyebrow').value = post.eyebrow || '';
+    postImage.value = '';
+    const prev = document.getElementById('postPreview');
+    if (post.image) {
+      prev.src = post.image.startsWith('http') ? post.image : ('https://raw.githubusercontent.com/' + els.owner.value.trim() + '/' + els.repo.value.trim() + '/' + els.branch.value.trim() + '/' + post.image);
+      prev.style.display = 'block';
+    } else {
+      prev.style.display = 'none';
+    }
+    publishBtn.textContent = 'بروزرسانی پست';
+    cancelEditBtn.style.display = 'block';
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tabpage').forEach(p => p.classList.remove('active'));
+    document.querySelector('.tab[data-tab="post"]').classList.add('active');
+    document.getElementById('tab-post').classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  cancelEditBtn.addEventListener('click', () => {
+    resetPostForm();
+    setStatus('postStatus', 'ok', 'ویرایش لغو شد.');
+  });
+
+  publishBtn.addEventListener('click', async () => {
     try {
       validateCfg();
       persistCfgIfNeeded();
@@ -384,11 +440,11 @@
       const type = postType.value;
       const file = postImage.files[0];
       if (!title) { setStatus('postStatus', 'err', 'عنوان رو وارد کنید.'); return; }
-      if (type === 'showcase' && !file) { setStatus('postStatus', 'err', 'برای کارت ویژه یه عکس لازمه.'); return; }
-      if (type === 'product' && price && isNaN(Number(price))) { setStatus('postStatus', 'err', 'قیمت باید فقط عدد باشه.'); return; }
+      if (type === 'showcase' && !file && !editingExistingImage) { setStatus('postStatus', 'err', 'برای کارت ویژه یه عکس لازمه.'); return; }
+      if ((type === 'product' || type === 'showcase') && price && isNaN(Number(price))) { setStatus('postStatus', 'err', 'قیمت باید فقط عدد باشه.'); return; }
 
-      setStatus('postStatus', 'busy', 'در حال انتشار...');
-      let imagePath = '';
+      setStatus('postStatus', 'busy', editingPostId ? 'در حال بروزرسانی...' : 'در حال انتشار...');
+      let imagePath = editingExistingImage;
       if (file) {
         setStatus('postStatus', 'busy', 'در حال آپلود عکس...');
         imagePath = await ghUploadImage(file);
@@ -398,30 +454,33 @@
       const current = await ghGetFile('data/posts.json');
       let posts = [];
       if (current.exists) { try { posts = JSON.parse(current.content); } catch(e){ posts = []; } }
-      posts.unshift({
-        id: Date.now().toString(),
+
+      const postData = {
         type, title, desc,
-        price: type === 'product' ? (Number(price) || 0) : '',
-        originalPrice: type === 'product' ? (Number(origPrice) || 0) : '',
-        ribbon: type === 'product' ? ribbon : '',
+        price: (type === 'product' || type === 'showcase') ? (Number(price) || 0) : '',
+        originalPrice: (type === 'product' || type === 'showcase') ? (Number(origPrice) || 0) : '',
+        ribbon: (type === 'product' || type === 'showcase') ? ribbon : '',
         eyebrow: type === 'showcase' ? eyebrow : '',
-        image: imagePath,
-        date: new Date().toISOString()
-      });
+        image: imagePath
+      };
+
+      if (editingPostId) {
+        const idx = posts.findIndex(p => p.id === editingPostId);
+        if (idx !== -1) {
+          posts[idx] = Object.assign({}, posts[idx], postData);
+        } else {
+          posts.unshift(Object.assign({ id: editingPostId, date: new Date().toISOString() }, postData));
+        }
+      } else {
+        posts.unshift(Object.assign({ id: Date.now().toString(), date: new Date().toISOString() }, postData));
+      }
 
       setStatus('postStatus', 'busy', 'در حال ذخیره...');
       await ghPutText('data/posts.json', JSON.stringify(posts, null, 2),
-        `افزودن پست: ${title}`, current.exists ? current.sha : undefined);
+        editingPostId ? `بروزرسانی پست: ${title}` : `افزودن پست: ${title}`, current.exists ? current.sha : undefined);
 
-      setStatus('postStatus', 'ok', 'پست منتشر شد 🎉 چند دقیقه صبر کنید تا رو سایت دیده بشه.');
-      document.getElementById('postTitle').value = '';
-      document.getElementById('postDesc').value = '';
-      document.getElementById('postPrice').value = '';
-      document.getElementById('postOrigPrice').value = '';
-      document.getElementById('postRibbon').value = '';
-      document.getElementById('postEyebrow').value = '';
-      postImage.value = '';
-      document.getElementById('postPreview').style.display = 'none';
+      setStatus('postStatus', 'ok', editingPostId ? 'پست بروزرسانی شد 🎉' : 'پست منتشر شد 🎉 چند دقیقه صبر کنید تا رو سایت دیده بشه.');
+      resetPostForm();
     } catch (e) {
       setStatus('postStatus', 'err', 'خطا: ' + errMsg(e));
     }
@@ -637,12 +696,19 @@
           <div class="post-item">
             <div class="meta">
               <b>${p.title}</b>
-              <span>${p.type === 'product' ? 'محصول' : p.type === 'showcase' ? 'کارت ویژه' : 'اطلاعیه'} ${p.price ? '· ' + p.price : ''}</span>
+              <span>${p.type === 'product' ? 'محصول' : p.type === 'showcase' ? 'کارت ویژه' : 'اطلاعیه'} ${p.price ? '· ' + Number(p.price).toLocaleString('fa-IR') + ' تومان' : ''}</span>
             </div>
+            <button class="edit-btn" data-id="${p.id}">ویرایش</button>
             <button class="del-btn" data-id="${p.id}">حذف</button>
           </div>`).join('');
         wrap.querySelectorAll('.del-btn').forEach(btn => {
           btn.addEventListener('click', () => deletePost(btn.dataset.id));
+        });
+        wrap.querySelectorAll('.edit-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const post = posts.find(p => p.id === btn.dataset.id);
+            if (post) populateEditForm(post);
+          });
         });
       }
       document.getElementById('listStatus').className = 'status';
