@@ -106,8 +106,12 @@
       <input type="text" id="postTitle" placeholder="مثلاً: گردنبند دلبرک">
       <label>توضیحات</label>
       <textarea id="postDesc" placeholder="توضیح کامل... (برای کارت ویژه، همینجا هم تو دکمه «توضیحات» نشون داده می‌شه)"></textarea>
-      <label id="priceLabel">قیمت (تومان)</label>
-      <input type="text" id="postPrice" placeholder="مثلاً: ۱۸۵,۰۰۰ تومان">
+      <label id="priceLabel">قیمت نهایی — تومان (فقط عدد)</label>
+      <input type="number" id="postPrice" placeholder="مثلاً: 185000" inputmode="numeric">
+      <label id="origPriceLabel">قیمت قبل از تخفیف — تومان (اختیاری، فقط عدد)</label>
+      <input type="number" id="postOrigPrice" placeholder="مثلاً: 250000" inputmode="numeric">
+      <label id="ribbonLabel">برچسب قرمز روی عکس (اختیاری)</label>
+      <input type="text" id="postRibbon" placeholder="مثلاً: پرفروش‌ترین این هفته">
       <label id="postImageLabel">عکس (اختیاری)</label>
       <input type="file" id="postImage" accept="image/*">
       <img id="postPreview" class="thumb">
@@ -118,6 +122,31 @@
 
   <!-- Look / photos -->
   <div class="tabpage" id="tab-look">
+    <div class="card">
+      <h2>لوگوی سایت</h2>
+      <p class="help">اگه یه لوگو بذارید، به‌جای نوشته «پرشین» تو هدر بالای صفحه نشون داده می‌شه. عکس با پس‌زمینه شفاف (PNG) و حدود ۲۰۰×۶۰ پیکسل بهترین نتیجه رو می‌ده.</p>
+      <input type="file" id="logoImage" accept="image/*">
+      <img id="logoPreview" class="thumb">
+      <button class="btn btn-primary" id="saveLogoBtn">ذخیره لوگو</button>
+      <div class="status" id="logoStatus"></div>
+    </div>
+    <div class="card">
+      <h2>دریافت نظرات مشتری‌ها (خصوصی)</h2>
+      <p class="help">
+        فرم نظرات سایت با یه سرویس رایگان (Web3Forms) کار می‌کنه که نظرات رو مستقیم به ایمیل شما می‌فرسته، بدون اینکه عمومی نمایش داده بشن.<br>
+        مراحل: به <b>web3forms.com</b> برید، ایمیلتون رو وارد کنید، یه «Access Key» رایگان می‌گیرید (نیازی به ثبت‌نام کامل نیست) — همون کلید رو اینجا بچسبونید.
+      </p>
+      <input type="text" id="commentsKeyInput" placeholder="Access Key از web3forms.com">
+      <button class="btn btn-primary" id="saveCommentsKeyBtn">ذخیره کلید نظرات</button>
+      <div class="status" id="commentsKeyStatus"></div>
+    </div>
+    <div class="card">
+      <h2>شماره واتساپ فروشگاه</h2>
+      <p class="help">سفارش‌هایی که از سبد خرید تکمیل می‌شن، به این شماره تو واتساپ ارسال می‌شن. شماره رو با کد کشور و بدون صفر اول بنویسید (مثلاً برای 0912xxxxxxx بنویسید 98912xxxxxxx).</p>
+      <input type="text" id="whatsappNumber" placeholder="مثلاً: 989121234567">
+      <button class="btn btn-primary" id="saveWhatsappBtn">ذخیره شماره</button>
+      <div class="status" id="whatsappStatus"></div>
+    </div>
     <div class="card">
       <h2>عکس صفحه منو</h2>
       <p class="help">این عکس بالای منوی همبرگری (به‌جای رنگ ساده) نشون داده می‌شه. عکس افقی و حدود ۹۰۰×۴۵۰ پیکسل بهترین نتیجه رو می‌ده.</p>
@@ -313,6 +342,10 @@
   const postType = document.getElementById('postType');
   const priceLabel = document.getElementById('priceLabel');
   const postPriceInput = document.getElementById('postPrice');
+  const origPriceLabel = document.getElementById('origPriceLabel');
+  const postOrigPriceInput = document.getElementById('postOrigPrice');
+  const ribbonLabel = document.getElementById('ribbonLabel');
+  const postRibbonInput = document.getElementById('postRibbon');
   const eyebrowLabel = document.getElementById('eyebrowLabel');
   const postEyebrowInput = document.getElementById('postEyebrow');
   const postImageLabel = document.getElementById('postImageLabel');
@@ -321,6 +354,10 @@
     const isShowcase = postType.value === 'showcase';
     priceLabel.style.display = isProduct ? 'block' : 'none';
     postPriceInput.style.display = isProduct ? 'block' : 'none';
+    origPriceLabel.style.display = isProduct ? 'block' : 'none';
+    postOrigPriceInput.style.display = isProduct ? 'block' : 'none';
+    ribbonLabel.style.display = isProduct ? 'block' : 'none';
+    postRibbonInput.style.display = isProduct ? 'block' : 'none';
     eyebrowLabel.style.display = isShowcase ? 'block' : 'none';
     postEyebrowInput.style.display = isShowcase ? 'block' : 'none';
     postImageLabel.textContent = isShowcase ? 'عکس (الزامی برای کارت ویژه)' : 'عکس (اختیاری)';
@@ -341,11 +378,14 @@
       const title = document.getElementById('postTitle').value.trim();
       const desc = document.getElementById('postDesc').value.trim();
       const price = document.getElementById('postPrice').value.trim();
+      const origPrice = document.getElementById('postOrigPrice').value.trim();
+      const ribbon = document.getElementById('postRibbon').value.trim();
       const eyebrow = document.getElementById('postEyebrow').value.trim();
       const type = postType.value;
       const file = postImage.files[0];
       if (!title) { setStatus('postStatus', 'err', 'عنوان رو وارد کنید.'); return; }
       if (type === 'showcase' && !file) { setStatus('postStatus', 'err', 'برای کارت ویژه یه عکس لازمه.'); return; }
+      if (type === 'product' && price && isNaN(Number(price))) { setStatus('postStatus', 'err', 'قیمت باید فقط عدد باشه.'); return; }
 
       setStatus('postStatus', 'busy', 'در حال انتشار...');
       let imagePath = '';
@@ -361,7 +401,9 @@
       posts.unshift({
         id: Date.now().toString(),
         type, title, desc,
-        price: type === 'product' ? price : '',
+        price: type === 'product' ? (Number(price) || 0) : '',
+        originalPrice: type === 'product' ? (Number(origPrice) || 0) : '',
+        ribbon: type === 'product' ? ribbon : '',
         eyebrow: type === 'showcase' ? eyebrow : '',
         image: imagePath,
         date: new Date().toISOString()
@@ -375,6 +417,8 @@
       document.getElementById('postTitle').value = '';
       document.getElementById('postDesc').value = '';
       document.getElementById('postPrice').value = '';
+      document.getElementById('postOrigPrice').value = '';
+      document.getElementById('postRibbon').value = '';
       document.getElementById('postEyebrow').value = '';
       postImage.value = '';
       document.getElementById('postPreview').style.display = 'none';
@@ -388,6 +432,14 @@
   menuImage.addEventListener('change', () => {
     const f = menuImage.files[0];
     const prev = document.getElementById('menuPreview');
+    if (f) { prev.src = URL.createObjectURL(f); prev.style.display = 'block'; }
+    else { prev.style.display = 'none'; }
+  });
+
+  const logoImage = document.getElementById('logoImage');
+  logoImage.addEventListener('change', () => {
+    const f = logoImage.files[0];
+    const prev = document.getElementById('logoPreview');
     if (f) { prev.src = URL.createObjectURL(f); prev.style.display = 'block'; }
     else { prev.style.display = 'none'; }
   });
@@ -414,6 +466,50 @@
       setStatus('menuStatus', 'ok', 'عکس منو ذخیره شد 🎉');
     } catch (e) {
       setStatus('menuStatus', 'err', 'خطا: ' + errMsg(e));
+    }
+  });
+
+  document.getElementById('saveLogoBtn').addEventListener('click', async () => {
+    try {
+      validateCfg();
+      persistCfgIfNeeded();
+      const f = logoImage.files[0];
+      if (!f) { setStatus('logoStatus', 'err', 'اول یه عکس انتخاب کنید.'); return; }
+      setStatus('logoStatus', 'busy', 'در حال آپلود لوگو...');
+      const path = await ghUploadImage(f);
+      setStatus('logoStatus', 'busy', 'در حال ذخیره تنظیمات...');
+      await saveConfigPatch({ logo: path });
+      setStatus('logoStatus', 'ok', 'لوگو ذخیره شد 🎉');
+    } catch (e) {
+      setStatus('logoStatus', 'err', 'خطا: ' + errMsg(e));
+    }
+  });
+
+  document.getElementById('saveWhatsappBtn').addEventListener('click', async () => {
+    try {
+      validateCfg();
+      persistCfgIfNeeded();
+      const num = document.getElementById('whatsappNumber').value.trim().replace(/[^0-9]/g, '');
+      if (!num) { setStatus('whatsappStatus', 'err', 'شماره رو وارد کنید.'); return; }
+      setStatus('whatsappStatus', 'busy', 'در حال ذخیره تنظیمات...');
+      await saveConfigPatch({ whatsapp: num });
+      setStatus('whatsappStatus', 'ok', 'شماره ذخیره شد 🎉');
+    } catch (e) {
+      setStatus('whatsappStatus', 'err', 'خطا: ' + errMsg(e));
+    }
+  });
+
+  document.getElementById('saveCommentsKeyBtn').addEventListener('click', async () => {
+    try {
+      validateCfg();
+      persistCfgIfNeeded();
+      const key = document.getElementById('commentsKeyInput').value.trim();
+      if (!key) { setStatus('commentsKeyStatus', 'err', 'کلید رو وارد کنید.'); return; }
+      setStatus('commentsKeyStatus', 'busy', 'در حال ذخیره تنظیمات...');
+      await saveConfigPatch({ commentsKey: key });
+      setStatus('commentsKeyStatus', 'ok', 'کلید ذخیره شد 🎉 فرم نظرات فعال شد.');
+    } catch (e) {
+      setStatus('commentsKeyStatus', 'err', 'خطا: ' + errMsg(e));
     }
   });
 
