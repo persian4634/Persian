@@ -257,35 +257,66 @@
 
   // Resize + compress a photo in the browser before upload, so large phone
   // photos (a few MB) don't hit GitHub's ~1MB per-file API limit.
-  function compressImage(file, maxDim, quality){
+  function drawToOutput(source, srcW, srcH, maxDim, quality, outMime, ext){
+    let width = srcW, height = srcH;
+    if (width > maxDim || height > maxDim) {
+      if (width > height) { height = Math.round(height * maxDim / width); width = maxDim; }
+      else { width = Math.round(width * maxDim / height); height = maxDim; }
+    }
+    const canvas = document.createElement('canvas');
+    canvas.width = width; canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(source, 0, 0, width, height);
+    return { base64: canvas.toDataURL(outMime, quality).split(',')[1], ext };
+  }
+
+  async function compressImage(file, maxDim, quality){
     // Keep PNGs as PNG (lossless, preserves transparency). Only JPEG-compress
     // photos, since flattening a transparent PNG onto a JPEG canvas fills the
     // transparent areas solid black.
     const wantsPng = file.type === 'image/png';
     const outMime = wantsPng ? 'image/png' : 'image/jpeg';
-    return new Promise((resolve, reject) => {
-      const url = URL.createObjectURL(file);
-      const img = new Image();
-      img.onload = () => {
-        let { width, height } = img;
-        if (width > maxDim || height > maxDim) {
-          if (width > height) { height = Math.round(height * maxDim / width); width = maxDim; }
-          else { width = Math.round(width * maxDim / height); height = maxDim; }
-        }
-        const canvas = document.createElement('canvas');
-        canvas.width = width; canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, width, height);
-        URL.revokeObjectURL(url);
-        try {
-          resolve({ base64: canvas.toDataURL(outMime, quality).split(',')[1], ext: wantsPng ? 'png' : 'jpg' });
-        } catch (e) {
-          reject(new Error('پردازش عکس با مشکل مواجه شد.'));
-        }
-      };
-      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('این فایل به‌عنوان عکس خونده نشد. لطفاً یه عکس دیگه امتحان کنید.')); };
-      img.src = url;
-    });
+    const ext = wantsPng ? 'png' : 'jpg';
+
+    // Tier 1: createImageBitmap — fastest and most reliable decoder on
+    // modern mobile Chrome, handles EXIF orientation and odd formats well.
+    if (window.createImageBitmap) {
+      try {
+        const bitmap = await createImageBitmap(file);
+        const out = drawToOutput(bitmap, bitmap.width, bitmap.height, maxDim, quality, outMime, ext);
+        bitmap.close && bitmap.close();
+        return out;
+      } catch (e) { /* fall through to tier 2 */ }
+    }
+
+    // Tier 2: classic <img> + object URL decode.
+    try {
+      return await new Promise((resolve, reject) => {
+        const url = URL.createObjectURL(file);
+        const img = new Image();
+        img.onload = () => {
+          try {
+            const out = drawToOutput(img, img.naturalWidth || img.width, img.naturalHeight || img.height, maxDim, quality, outMime, ext);
+            URL.revokeObjectURL(url);
+            resolve(out);
+          } catch (e2) {
+            URL.revokeObjectURL(url);
+            reject(e2);
+          }
+        };
+        img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('decode-failed')); };
+        img.src = url;
+      });
+    } catch (e) { /* fall through to tier 3 */ }
+
+    // Tier 3: last resort — upload the original file untouched, only if
+    // it's small enough for GitHub's per-file API limit.
+    if (file.size <= 900 * 1024) {
+      const base64 = await fileToBase64Raw(file);
+      const origExt = (file.name.split('.').pop() || (wantsPng ? 'png' : 'jpg')).toLowerCase();
+      return { base64, ext: origExt };
+    }
+    throw new Error('این فایل به‌عنوان عکس خونده نشد. لطفاً یه عکس دیگه (یا با فرمت دیگه) امتحان کنید.');
   }
 
   function errMsg(e){
