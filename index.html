@@ -166,6 +166,8 @@
   .prod-card{background:var(--card);border-radius:20px;overflow:hidden;box-shadow:var(--shadow);}
   .prod-media{position:relative;height:180px;background-size:cover;background-position:center;background-color:#3a3a3a;}
   .prod-badge{position:absolute;top:10px;left:10px;background:#E53935;color:#fff;font-size:11px;font-weight:800;padding:4px 9px;border-radius:8px;z-index:2;}
+  .prod-new{position:absolute;top:10px;left:10px;background:#2B2B2E;color:#fff;font-size:10.5px;font-weight:800;padding:4px 10px;border-radius:8px;z-index:2;}
+  .prod-media{cursor:pointer;}
   .prod-ribbon{position:absolute;top:0;right:0;left:0;background:#E53935;color:#fff;font-size:10.5px;font-weight:700;text-align:center;padding:5px 8px;z-index:2;line-height:1.5;}
   .prod-add{position:absolute;bottom:10px;left:10px;width:34px;height:34px;border-radius:50%;background:var(--blue);border:none;display:flex;align-items:center;justify-content:center;z-index:2;box-shadow:0 6px 14px -4px rgba(76,111,240,.6);}
   .prod-add svg{width:16px;height:16px;stroke:#fff;}
@@ -608,6 +610,8 @@
       </div>
     </div>
     <p id="modalDesc"></p>
+    <div class="prod-price-row" id="modalPriceRow" style="display:none;margin-top:14px;"></div>
+    <button class="btn-checkout" id="modalAddBtn" style="display:none;margin-top:14px;">افزودن به سبد</button>
   </div>
 </div>
 
@@ -650,8 +654,47 @@
   const modalEyebrow = document.getElementById('modalEyebrow');
   const modalTitle = document.getElementById('modalTitle');
   const modalDesc = document.getElementById('modalDesc');
+  const modalPriceRow = document.getElementById('modalPriceRow');
+  const modalAddBtn = document.getElementById('modalAddBtn');
   document.getElementById('closeModal').addEventListener('click', ()=> modalOverlay.classList.remove('open'));
   modalOverlay.addEventListener('click', (e)=>{ if(e.target === modalOverlay) modalOverlay.classList.remove('open'); });
+
+  // Shared detail popup for both product cards and showcase cards: photo,
+  // title, full description, price (if any) and an add-to-cart button.
+  let currentModalItem = null;
+  function openItemModal(post){
+    currentModalItem = post;
+    if (post.image) {
+      modalPhoto.style.display = 'block';
+      modalPhoto.style.backgroundImage = `url('${encodeURI(post.image)}')`;
+      modalIco.style.display = 'none';
+    } else {
+      modalPhoto.style.display = 'none';
+      modalIco.style.display = 'flex';
+      modalIco.style.background = '#4C6FF0';
+      modalIco.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M12 2l2.6 5.9L21 9l-4.8 4 1.4 6.4L12 16.7 6.4 19.4 7.8 13 3 9l6.4-1.1z"/></svg>';
+    }
+    modalEyebrow.textContent = post.eyebrow || '';
+    modalTitle.textContent = post.title;
+    modalDesc.style.display = 'block';
+    modalDesc.textContent = post.desc || '';
+
+    const price = Number(post.price) || 0;
+    const orig = Number(post.originalPrice) || 0;
+    const hasDiscount = orig > price && price > 0;
+    if (price > 0) {
+      modalPriceRow.style.display = 'flex';
+      modalPriceRow.innerHTML = (hasDiscount ? `<span class="prod-old">${formatToman(orig)}</span>` : '') + `<span class="prod-final">${formatToman(price)}</span>`;
+      modalAddBtn.style.display = 'block';
+    } else {
+      modalPriceRow.style.display = 'none';
+      modalAddBtn.style.display = 'none';
+    }
+    modalOverlay.classList.add('open');
+  }
+  modalAddBtn.addEventListener('click', () => {
+    if (currentModalItem) addToCart(currentModalItem);
+  });
 
   const track = document.getElementById('storiesTrack');
   const storyViewer = document.getElementById('storyViewer');
@@ -895,8 +938,8 @@
           const pct = hasDiscount ? Math.round((1 - price / orig) * 100) : 0;
           return `
           <div class="prod-card">
-            <div class="prod-media" style="${p.image ? `background-image:url('${encodeURI(p.image)}')` : ''}">
-              ${hasDiscount ? `<div class="prod-badge">${pct}% تخفیف</div>` : ''}
+            <div class="prod-media" data-open-id="${escapeHtml(p.id)}" style="${p.image ? `background-image:url('${encodeURI(p.image)}')` : ''}">
+              ${hasDiscount ? `<div class="prod-badge">${pct}% تخفیف</div>` : `<div class="prod-new">جدید</div>`}
               ${p.ribbon ? `<div class="prod-ribbon">${escapeHtml(p.ribbon)}</div>` : ''}
               <button class="prod-add" data-add-id="${escapeHtml(p.id)}" aria-label="افزودن به سبد">
                 <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
@@ -912,9 +955,16 @@
           </div>`;
         }).join('');
         document.querySelectorAll('[data-add-id]').forEach(btn => {
-          btn.addEventListener('click', () => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
             const post = products.find(p => p.id === btn.dataset.addId);
             if (post) addToCart(post);
+          });
+        });
+        document.querySelectorAll('#liveProductsGrid [data-open-id]').forEach(el => {
+          el.addEventListener('click', () => {
+            const post = products.find(p => p.id === el.dataset.openId);
+            if (post) openItemModal(post);
           });
         });
       }
@@ -956,22 +1006,7 @@
         document.querySelectorAll('[data-showcase-id]').forEach(btn => {
           btn.addEventListener('click', () => {
             const post = showcases.find(s => s.id === btn.dataset.showcaseId);
-            if (!post) return;
-            if (post.image) {
-              modalPhoto.style.display = 'block';
-              modalPhoto.style.backgroundImage = `url('${encodeURI(post.image)}')`;
-              modalIco.style.display = 'none';
-            } else {
-              modalPhoto.style.display = 'none';
-              modalIco.style.display = 'flex';
-              modalIco.style.background = '#4C6FF0';
-              modalIco.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M12 2l2.6 5.9L21 9l-4.8 4 1.4 6.4L12 16.7 6.4 19.4 7.8 13 3 9l6.4-1.1z"/></svg>';
-            }
-            modalEyebrow.textContent = post.eyebrow || '';
-            modalTitle.textContent = post.title;
-            modalDesc.style.display = 'block';
-            modalDesc.textContent = post.desc;
-            modalOverlay.classList.add('open');
+            if (post) openItemModal(post);
           });
         });
       }
