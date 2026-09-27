@@ -150,6 +150,34 @@
       <div class="status" id="whatsappStatus"></div>
     </div>
     <div class="card">
+      <h2>شبکه‌های اجتماعی</h2>
+      <p class="help">هر کدوم رو که پر کنید، پایین صفحه سایت به‌عنوان آیکون قابل‌کلیک نشون داده می‌شه. آدرس کامل (با https://) وارد کنید. اگه خالی بذارید، اون آیکون اصلاً نشون داده نمی‌شه.</p>
+      <label style="margin-top:0;">اینستاگرام</label>
+      <input type="text" id="socialInstagramInput" placeholder="https://instagram.com/yourpage">
+      <label>تلگرام</label>
+      <input type="text" id="socialTelegramInput" placeholder="https://t.me/yourchannel">
+      <label>واتساپ</label>
+      <input type="text" id="socialWhatsappInput" placeholder="https://wa.me/989121234567">
+      <label>بله</label>
+      <input type="text" id="socialBaleInput" placeholder="https://ble.ir/yourpage">
+      <label>روبیکا</label>
+      <input type="text" id="socialRubikaInput" placeholder="https://rubika.ir/yourpage">
+      <button class="btn btn-secondary" id="loadSocialBtn">بارگذاری مقادیر فعلی</button>
+      <button class="btn btn-primary" id="saveSocialBtn">ذخیره شبکه‌های اجتماعی</button>
+      <div class="status" id="socialStatus"></div>
+    </div>
+    <div class="card">
+      <h2>درباره ما / قوانین و مقررات</h2>
+      <p class="help">این متن‌ها با زدن لینک‌های «درباره ما» و «قوانین و مقررات» پایین صفحه سایت نشون داده می‌شن.</p>
+      <label style="margin-top:0;">متن «درباره ما»</label>
+      <textarea id="aboutTextInput" placeholder="چند خط درباره فروشگاه‌تون بنویسید..."></textarea>
+      <label>متن «قوانین و مقررات» (شامل شرایط مرجوعی کالا)</label>
+      <textarea id="termsTextInput" placeholder="قوانین فروش، شرایط ارسال و مرجوعی کالا رو اینجا بنویسید..."></textarea>
+      <button class="btn btn-secondary" id="loadPagesBtn">بارگذاری متن‌های فعلی</button>
+      <button class="btn btn-primary" id="savePagesBtn">ذخیره متن‌ها</button>
+      <div class="status" id="pagesStatus"></div>
+    </div>
+    <div class="card">
       <h2>عکس صفحه منو</h2>
       <p class="help">این عکس بالای منوی همبرگری (به‌جای رنگ ساده) نشون داده می‌شه. عکس افقی و حدود ۹۰۰×۴۵۰ پیکسل بهترین نتیجه رو می‌ده.</p>
       <input type="file" id="menuImage" accept="image/*">
@@ -591,6 +619,75 @@
       setStatus('whatsappStatus', 'ok', 'شماره ذخیره شد 🎉');
     } catch (e) {
       setStatus('whatsappStatus', 'err', 'خطا: ' + errMsg(e));
+    }
+  });
+
+  document.getElementById('loadSocialBtn').addEventListener('click', async () => {
+    try {
+      validateCfg();
+      persistCfgIfNeeded();
+      setStatus('socialStatus', 'busy', 'در حال دریافت...');
+      const current = await ghGetFile('data/config.json');
+      let config = {};
+      if (current.exists) { try { config = JSON.parse(current.content); } catch(e){ config = {}; } }
+      const social = config.social || {};
+      document.getElementById('socialInstagramInput').value = social.instagram || '';
+      document.getElementById('socialTelegramInput').value = social.telegram || '';
+      document.getElementById('socialWhatsappInput').value = social.whatsapp || '';
+      document.getElementById('socialBaleInput').value = social.bale || '';
+      document.getElementById('socialRubikaInput').value = social.rubika || '';
+      document.getElementById('socialStatus').className = 'status';
+    } catch (e) {
+      setStatus('socialStatus', 'err', 'خطا: ' + errMsg(e));
+    }
+  });
+
+  document.getElementById('saveSocialBtn').addEventListener('click', async () => {
+    try {
+      validateCfg();
+      persistCfgIfNeeded();
+      const social = {
+        instagram: document.getElementById('socialInstagramInput').value.trim(),
+        telegram: document.getElementById('socialTelegramInput').value.trim(),
+        whatsapp: document.getElementById('socialWhatsappInput').value.trim(),
+        bale: document.getElementById('socialBaleInput').value.trim(),
+        rubika: document.getElementById('socialRubikaInput').value.trim(),
+      };
+      setStatus('socialStatus', 'busy', 'در حال ذخیره تنظیمات...');
+      await saveConfigPatch({ social });
+      setStatus('socialStatus', 'ok', 'شبکه‌های اجتماعی ذخیره شدن 🎉');
+    } catch (e) {
+      setStatus('socialStatus', 'err', 'خطا: ' + errMsg(e));
+    }
+  });
+
+  document.getElementById('loadPagesBtn').addEventListener('click', async () => {
+    try {
+      validateCfg();
+      persistCfgIfNeeded();
+      setStatus('pagesStatus', 'busy', 'در حال دریافت...');
+      const current = await ghGetFile('data/config.json');
+      let config = {};
+      if (current.exists) { try { config = JSON.parse(current.content); } catch(e){ config = {}; } }
+      document.getElementById('aboutTextInput').value = config.aboutText || '';
+      document.getElementById('termsTextInput').value = config.termsText || '';
+      document.getElementById('pagesStatus').className = 'status';
+    } catch (e) {
+      setStatus('pagesStatus', 'err', 'خطا: ' + errMsg(e));
+    }
+  });
+
+  document.getElementById('savePagesBtn').addEventListener('click', async () => {
+    try {
+      validateCfg();
+      persistCfgIfNeeded();
+      const aboutText = document.getElementById('aboutTextInput').value.trim();
+      const termsText = document.getElementById('termsTextInput').value.trim();
+      setStatus('pagesStatus', 'busy', 'در حال ذخیره تنظیمات...');
+      await saveConfigPatch({ aboutText, termsText });
+      setStatus('pagesStatus', 'ok', 'متن‌ها ذخیره شدن 🎉');
+    } catch (e) {
+      setStatus('pagesStatus', 'err', 'خطا: ' + errMsg(e));
     }
   });
 

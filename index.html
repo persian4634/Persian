@@ -375,7 +375,7 @@
       <button class="round-btn active" id="themeToggle" aria-label="حالت شب">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg>
       </button>
-      <button class="round-btn" aria-label="اشتراک‌گذاری">
+      <button class="round-btn" id="shareBtn" aria-label="اشتراک‌گذاری">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="18" cy="5" r="2.6"/><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/><line x1="8.3" y1="10.7" x2="15.7" y2="6.3"/><line x1="8.3" y1="13.3" x2="15.7" y2="17.7"/></svg>
       </button>
     </div>
@@ -472,16 +472,16 @@
       <h2>پرشین</h2>
       <p>طراحی‌شده برای کسانی که به جزئیات اهمیت می‌دن و دنبال یک استایل متفاوت‌اند.</p>
       <div class="social-row">
-        <a href="#" style="background:#C13584;" aria-label="اینستاگرام"><svg viewBox="0 0 24 24" stroke-width="1.7"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1"/></svg></a>
-        <a href="#" style="background:#26A5E4;" aria-label="تلگرام"><svg viewBox="0 0 24 24" stroke-width="1.7"><path d="M21 4L3 11l6 2m12-9l-4 16-8-6m12-10L9 13"/></svg></a>
-        <a href="#" style="background:#25D366;" aria-label="واتساپ"><svg viewBox="0 0 24 24" stroke-width="1.7"><path d="M4 20l1.4-4A8 8 0 1 1 9 19z"/></svg></a>
-        <a href="#" style="background:#E75480;" aria-label="اشتراک‌گذاری"><svg viewBox="0 0 24 24" stroke-width="1.7"><circle cx="18" cy="5" r="2.6"/><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/><line x1="8.3" y1="10.7" x2="15.7" y2="6.3"/><line x1="8.3" y1="13.3" x2="15.7" y2="17.7"/></svg></a>
-        <a href="#top" style="background:var(--blue);" aria-label="بازگشت به بالا"><svg viewBox="0 0 24 24" stroke-width="1.9"><path d="M12 19V5M6 11l6-6 6 6"/></svg></a>
+        <a href="#" id="socialInstagram" style="background:#C13584;display:none;" aria-label="اینستاگرام" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" stroke-width="1.7"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1"/></svg></a>
+        <a href="#" id="socialTelegram" style="background:#26A5E4;display:none;" aria-label="تلگرام" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" stroke-width="1.7"><path d="M21 4L3 11l6 2m12-9l-4 16-8-6m12-10L9 13"/></svg></a>
+        <a href="#" id="socialWhatsapp" style="background:#25D366;display:none;" aria-label="واتساپ" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" stroke-width="1.7"><path d="M4 20l1.4-4A8 8 0 1 1 9 19z"/></svg></a>
+        <a href="#" id="socialBale" style="background:#1E88E5;display:none;font-weight:800;font-size:18px;color:#fff;" aria-label="بله" target="_blank" rel="noopener">ب</a>
+        <a href="#" id="socialRubika" style="background:#F26E45;display:none;font-weight:800;font-size:18px;color:#fff;" aria-label="روبیکا" target="_blank" rel="noopener">ر</a>
       </div>
       <div class="foot-links">
-        <a href="#">حریم خصوصی</a>
-        <a href="#">قوانین و مقررات</a>
-        <a href="#">تماس با پشتیبانی</a>
+        <a href="#" id="footAbout">درباره ما</a>
+        <a href="#" id="footTerms">قوانین و مقررات</a>
+        <a href="#" id="footSupport">تماس با پشتیبانی</a>
       </div>
     </div>
   </section>
@@ -694,6 +694,54 @@
   }
   modalAddBtn.addEventListener('click', () => {
     if (currentModalItem) addToCart(currentModalItem);
+  });
+
+  // Simple text-only modal (About us / Terms & return policy), reusing the
+  // same popup used for product/showcase details.
+  function openTextModal(title, text){
+    modalPhoto.style.display = 'none';
+    modalIco.style.display = 'none';
+    modalEyebrow.textContent = '';
+    modalTitle.textContent = title;
+    modalDesc.style.display = 'block';
+    modalDesc.textContent = text;
+    modalPriceRow.style.display = 'none';
+    modalAddBtn.style.display = 'none';
+    modalOverlay.classList.add('open');
+  }
+  document.getElementById('footAbout').addEventListener('click', (e) => {
+    e.preventDefault();
+    openTextModal('درباره ما', aboutText || 'به‌زودی درباره پرشین بیشتر می‌نویسیم.');
+  });
+  document.getElementById('footTerms').addEventListener('click', (e) => {
+    e.preventDefault();
+    openTextModal('قوانین و مقررات', termsText || 'قوانین و شرایط مرجوعی کالا به‌زودی اینجا قرار می‌گیره.');
+  });
+  document.getElementById('footSupport').addEventListener('click', (e) => {
+    e.preventDefault();
+    const phone = shopWhatsapp.replace(/[^0-9]/g, '');
+    if (phone) {
+      window.open(`https://wa.me/${phone}`, '_blank');
+    } else {
+      openTextModal('تماس با پشتیبانی', 'برای تماس با پشتیبانی، فعلاً از فرم نظرات پایین صفحه استفاده کنید.');
+    }
+  });
+
+  // Header share button
+  document.getElementById('shareBtn').addEventListener('click', async () => {
+    const shareData = { title: 'پرشین', text: 'فروشگاه پرشین رو ببین', url: location.href };
+    if (navigator.share) {
+      try { await navigator.share(shareData); } catch (e) { /* user cancelled, ignore */ }
+    } else if (navigator.clipboard) {
+      try {
+        await navigator.clipboard.writeText(location.href);
+        alert('لینک سایت کپی شد.');
+      } catch (e) {
+        alert(location.href);
+      }
+    } else {
+      alert(location.href);
+    }
   });
 
   const track = document.getElementById('storiesTrack');
@@ -1035,6 +1083,16 @@
       }
       if (cfg.whatsapp) { shopWhatsapp = cfg.whatsapp; }
       if (cfg.commentsKey) { commentsKey = cfg.commentsKey; }
+      if (cfg.aboutText) { aboutText = cfg.aboutText; }
+      if (cfg.termsText) { termsText = cfg.termsText; }
+      if (cfg.social) {
+        const socialMap = { instagram: 'socialInstagram', telegram: 'socialTelegram', whatsapp: 'socialWhatsapp', bale: 'socialBale', rubika: 'socialRubika' };
+        Object.keys(socialMap).forEach(key => {
+          const link = cfg.social[key];
+          const el = document.getElementById(socialMap[key]);
+          if (el && link) { el.href = link; el.style.display = 'flex'; }
+        });
+      }
       if (Array.isArray(cfg.storySlides) && cfg.storySlides.length) {
         renderAndHydrateStories(cfg.storySlides);
       }
@@ -1046,6 +1104,8 @@
 
   /* ---- Private comment form -> sent straight to the shop, never shown on the site ---- */
   let commentsKey = '';
+  let aboutText = '';
+  let termsText = '';
   const commentForm = document.getElementById('commentForm');
   if (commentForm) {
     commentForm.addEventListener('submit', async (e) => {
