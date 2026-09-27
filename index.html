@@ -565,11 +565,11 @@
       </div>
 
       <div class="menu-group-title">پشتیبانی</div>
-      <a href="#" class="menu-row">
+      <a href="#" class="menu-row" id="menuAbout">
         <div class="menu-ico" style="background:var(--blue);"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.2 2.4c-.8.3-1.2 1-1.2 1.8" /><circle cx="12" cy="16.3" r=".4" fill="#fff" stroke="none"/></svg></div>
         درباره پرشین<svg class="chev" viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M14 6l-6 6 6 6"/></svg>
       </a>
-      <a href="#" class="menu-row">
+      <a href="#" class="menu-row" id="menuContact">
         <div class="menu-ico" style="background:var(--green);"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 6l9 7 9-7"/></svg></div>
         تماس با ما<svg class="chev" viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M14 6l-6 6 6 6"/></svg>
       </a>
@@ -724,6 +724,21 @@
       window.open(`https://wa.me/${phone}`, '_blank');
     } else {
       openTextModal('تماس با پشتیبانی', 'برای تماس با پشتیبانی، فعلاً از فرم نظرات پایین صفحه استفاده کنید.');
+    }
+  });
+  document.getElementById('menuAbout').addEventListener('click', (e) => {
+    e.preventDefault();
+    closeMenuFn();
+    openTextModal('درباره پرشین', aboutText || 'به‌زودی درباره پرشین بیشتر می‌نویسیم.');
+  });
+  document.getElementById('menuContact').addEventListener('click', (e) => {
+    e.preventDefault();
+    closeMenuFn();
+    const phone = shopWhatsapp.replace(/[^0-9]/g, '');
+    if (phone) {
+      window.open(`https://wa.me/${phone}`, '_blank');
+    } else {
+      openTextModal('تماس با ما', 'برای تماس با ما، فعلاً از فرم نظرات پایین صفحه استفاده کنید.');
     }
   });
 
