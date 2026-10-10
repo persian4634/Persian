@@ -105,8 +105,9 @@
   .story-ring{
     position:relative;isolation:isolate;
     width:74px;height:74px;border-radius:50%;padding:3px;box-sizing:border-box;
-    background:linear-gradient(135deg,var(--c1,#5FCFC0),var(--c2,#1E7E76));
+    background:linear-gradient(45deg,#fcaf45,#f56040 35%,#e1306c 65%,#c13584);
     display:flex;align-items:center;justify-content:center;
+    transition:background .4s ease;
   }
   /* Rotating neon light chasing around the story circle */
   .story-ring::before{
@@ -114,10 +115,15 @@
     position:absolute;inset:-4px;border-radius:50%;z-index:-1;
     background:conic-gradient(from 0deg,
       transparent 0deg, transparent 300deg,
-      var(--c1,#5FCFC0) 330deg, #fff 345deg, var(--c2,#1E7E76) 358deg, transparent 360deg);
+      #f56040 330deg, #fff 345deg, #e1306c 358deg, transparent 360deg);
     filter:blur(2.5px);
     animation:storyNeonSpin 2.6s linear infinite;
   }
+  /* Already-seen story: grey ring, no glow (like Instagram) */
+  .story-item.seen .story-ring{background:#c7c7cc;}
+  .story-item.seen .story-ring::before{display:none;}
+  html[data-theme="dark"] .story-item.seen .story-ring{background:#4a4a50;}
+  .story-item.seen span{opacity:.6;}
   @keyframes storyNeonSpin{ to{ transform:rotate(360deg); } }
   .story-photo{width:100%;height:100%;border-radius:50%;background:var(--card);padding:2.5px;box-sizing:border-box;}
   .story-photo-inner{
@@ -223,10 +229,39 @@
   .story-viewer-close{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.2);border:none;display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
   .story-viewer-close svg{width:15px;height:15px;stroke:#fff;}
   .story-viewer-caption{
-    position:absolute;left:0;right:0;bottom:0;z-index:2;color:#fff;font-size:13px;line-height:1.85;
-    padding:26px 20px calc(20px + env(safe-area-inset-bottom));
-    background:linear-gradient(0deg, rgba(0,0,0,.6), transparent);
+    position:absolute;left:0;right:0;bottom:78px;z-index:2;color:#fff;font-size:13px;line-height:1.85;
+    padding:26px 20px 10px;
+    background:linear-gradient(0deg, rgba(0,0,0,.55), transparent);
+    pointer-events:none;
   }
+  .story-viewer-bar{
+    position:absolute;left:0;right:0;bottom:0;z-index:4;display:flex;align-items:center;gap:10px;
+    padding:10px 14px calc(12px + env(safe-area-inset-bottom));
+    background:linear-gradient(0deg, rgba(0,0,0,.7), rgba(0,0,0,.25) 75%, transparent);
+  }
+  .story-input{
+    flex:1;min-width:0;height:46px;border-radius:23px;border:1.5px solid rgba(255,255,255,.6);
+    background:rgba(0,0,0,.25);color:#fff;font-family:inherit;font-size:16px;padding:0 18px;outline:none;
+  }
+  .story-input::placeholder{color:rgba(255,255,255,.8);}
+  .story-input:focus{border-color:#fff;background:rgba(0,0,0,.4);}
+  .story-act{
+    flex:0 0 auto;width:44px;height:44px;border:none;background:none;padding:0;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .story-act svg{width:28px;height:28px;stroke:#fff;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;transition:transform .2s;}
+  .story-act:active svg{transform:scale(.85);}
+  #storyLike.liked svg{fill:#ff3040;stroke:#ff3040;animation:storyHeartPop .45s ease;}
+  @keyframes storyHeartPop{0%{transform:scale(.6);}50%{transform:scale(1.35);}100%{transform:scale(1);}}
+  #storySend{display:none;}
+  .story-bar.typing #storySend{display:flex;}
+  .story-bar.typing #storyLike{display:none;}
+  .story-toast{
+    position:absolute;left:50%;bottom:calc(96px + env(safe-area-inset-bottom));transform:translate(-50%,10px);z-index:5;
+    background:rgba(0,0,0,.75);color:#fff;font-size:13px;padding:9px 18px;border-radius:20px;
+    opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;white-space:nowrap;
+  }
+  .story-toast.show{opacity:1;transform:translate(-50%,0);}
 
   .section{padding:20px 20px 0;}
 
@@ -777,6 +812,12 @@
     <div class="story-viewer-title" id="storyViewerTitle"></div>
   </div>
   <div class="story-viewer-caption" id="storyViewerCaption" style="display:none;"></div>
+  <div class="story-toast" id="storyToast"></div>
+  <div class="story-viewer-bar story-bar" id="storyBar">
+    <input class="story-input" id="storyInput" type="text" placeholder="نظرت رو بنویس..." enterkeyhint="send" autocomplete="off" maxlength="300">
+    <button type="button" class="story-act" id="storyLike" aria-label="لایک"><svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.3 3 4.5 6.6 4.5c2 0 3.5 1 5.4 3 1.9-2 3.4-3 5.4-3 3.6 0 5.7 3.800 4.200 7.300C19.500 16.400 12 21 12 21z"/></svg></button>
+    <button type="button" class="story-act" id="storySend" aria-label="ارسال"><svg viewBox="0 0 24 24"><path d="M21 3L10 14M21 3l-7 18-4-7-7-4 18-7z"/></svg></button>
+  </div>
 </div>
 
 <script>
@@ -921,6 +962,7 @@
   let storyItems = [];      // current list of .story-item elements (snapshot)
   let storyIndex = 0;       // which one is showing
   let storyTimer = null;    // auto-advance timer for the active segment
+  let storyRemaining = 0, storyStartedAt = 0, storyPaused = false;
 
   function buildStoryProgressBar(){
     storyViewerProgress.innerHTML = storyItems.map(() => '<div class="seg"><i></i></div>').join('');
@@ -965,7 +1007,31 @@
     storyViewerCaption.style.display = hasDesc ? 'block' : 'none';
     storyViewerCaption.textContent = hasDesc ? item.dataset.desc : '';
     setStoryProgressState();
-    storyTimer = setTimeout(nextStory, STORY_DURATION_MS);
+    storyRemaining = STORY_DURATION_MS;
+    storyPaused = false;
+    startStoryTimer();
+    markStorySeen(item);
+    syncLikeButton();
+  }
+  function startStoryTimer(){
+    clearStoryTimer();
+    storyStartedAt = Date.now();
+    storyTimer = setTimeout(nextStory, storyRemaining);
+  }
+  function pauseStory(){
+    if (storyPaused || !storyViewer.classList.contains('open')) return;
+    storyPaused = true;
+    clearStoryTimer();
+    storyRemaining = Math.max(300, storyRemaining - (Date.now() - storyStartedAt));
+    const bar = storyViewerProgress.querySelector('.seg.active i');
+    if (bar) bar.style.animationPlayState = 'paused';
+  }
+  function resumeStory(){
+    if (!storyPaused) return;
+    storyPaused = false;
+    const bar = storyViewerProgress.querySelector('.seg.active i');
+    if (bar) bar.style.animationPlayState = 'running';
+    startStoryTimer();
   }
   function nextStory(){
     if (storyIndex >= storyItems.length - 1) { closeStoryViewer(); return; }
@@ -984,6 +1050,8 @@
   }
   function closeStoryViewer(){
     clearStoryTimer();
+    storyPaused = false;
+    storyInput.value = ''; storyBar.classList.remove('typing'); storyInput.blur();
     storyViewer.classList.remove('open');
     storyViewerImg.src = '';
   }
@@ -1000,6 +1068,78 @@
     const items = Array.from(track.querySelectorAll('.story-item'));
     openStoryViewer(items.indexOf(item));
   });
+
+
+  /* ---- Story extras: seen state, like, comment ---- */
+  // NOTE: this is a static site, so "seen" and "liked" are remembered per device/browser (localStorage).
+  const storyInput = document.getElementById('storyInput');
+  const storyBar = document.getElementById('storyBar');
+  const storyLikeBtn = document.getElementById('storyLike');
+  const storySendBtn = document.getElementById('storySend');
+  const storyToast = document.getElementById('storyToast');
+  function storyKey(item){ return (item.dataset.title || '') + '|' + (item.dataset.image || ''); }
+  function readStore(name){ try { return JSON.parse(localStorage.getItem(name) || '{}') || {}; } catch(e){ return {}; } }
+  function writeStore(name, obj){ try { localStorage.setItem(name, JSON.stringify(obj)); } catch(e){} }
+  function markStorySeen(item){
+    const seen = readStore('storySeen');
+    seen[storyKey(item)] = 1;
+    writeStore('storySeen', seen);
+    item.classList.add('seen');
+  }
+  function applySeenStories(){
+    const seen = readStore('storySeen');
+    track.querySelectorAll('.story-item').forEach(it => it.classList.toggle('seen', !!seen[storyKey(it)]));
+  }
+  function syncLikeButton(){
+    const likes = readStore('storyLikes');
+    storyLikeBtn.classList.toggle('liked', !!likes[storyKey(storyItems[storyIndex])]);
+  }
+  storyLikeBtn.addEventListener('click', () => {
+    const k = storyKey(storyItems[storyIndex]);
+    const likes = readStore('storyLikes');
+    if (likes[k]) delete likes[k]; else likes[k] = 1;
+    writeStore('storyLikes', likes);
+    storyLikeBtn.classList.remove('liked'); void storyLikeBtn.offsetWidth;
+    syncLikeButton();
+  });
+  let storyToastTimer = null;
+  function showStoryToast(msg){
+    storyToast.textContent = msg;
+    storyToast.classList.add('show');
+    clearTimeout(storyToastTimer);
+    storyToastTimer = setTimeout(() => storyToast.classList.remove('show'), 2200);
+  }
+  // Typing pauses the story; leaving the field (with nothing typed) resumes it
+  storyInput.addEventListener('focus', pauseStory);
+  storyInput.addEventListener('blur', () => { if (!storyInput.value.trim()) resumeStory(); });
+  storyInput.addEventListener('input', () => storyBar.classList.toggle('typing', !!storyInput.value.trim()));
+  async function sendStoryComment(){
+    const msg = storyInput.value.trim();
+    if (!msg) return;
+    if (!commentsKey) { showStoryToast('فعلاً ارسال نظر فعال نشده'); return; }
+    const title = storyItems[storyIndex].dataset.title || '';
+    storySendBtn.disabled = true;
+    try {
+      const res = await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          access_key: commentsKey,
+          subject: 'نظر روی استوری «' + title + '»',
+          name: 'بازدیدکننده سایت',
+          message: msg
+        })
+      });
+      if (res.ok) {
+        storyInput.value = ''; storyBar.classList.remove('typing'); storyInput.blur();
+        showStoryToast('نظرت ارسال شد 🙏');
+        resumeStory();
+      } else { showStoryToast('ارسال نشد، دوباره امتحان کن'); }
+    } catch(e) { showStoryToast('اتصال اینترنت رو چک کن'); }
+    storySendBtn.disabled = false;
+  }
+  storySendBtn.addEventListener('click', sendStoryComment);
+  storyInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); sendStoryComment(); } });
 
   function escapeHtml(str){
     return String(str || '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
@@ -1127,6 +1267,7 @@
         <span>${escapeHtml(s.label || '')}</span>
       </div>`;
     }).join('');
+    applySeenStories();
   }
 
   // Render the row immediately (icons show right away, nothing waits), then
