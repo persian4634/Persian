@@ -109,21 +109,7 @@
     display:flex;align-items:center;justify-content:center;
     transition:background .4s ease;
   }
-  /* Rotating neon light chasing around the story circle */
-  .story-ring::before{
-    content:'';
-    position:absolute;inset:-4px;border-radius:50%;z-index:-1;
-    background:conic-gradient(from 0deg,
-      transparent 0deg, transparent 300deg,
-      #f56040 330deg, #fff 345deg, #e1306c 358deg, transparent 360deg);
-    filter:blur(2.5px);
-    animation:storyNeonSpin 2.6s linear infinite;
-  }
-  /* Already-seen story: grey ring, no glow (like Instagram) */
-  .story-item.seen .story-ring{background:#c7c7cc;}
-  .story-item.seen .story-ring::before{display:none;}
-  html[data-theme="dark"] .story-item.seen .story-ring{background:#4a4a50;}
-  .story-item.seen span{opacity:.6;}
+  .story-ring::before{display:none;}
   @keyframes storyNeonSpin{ to{ transform:rotate(360deg); } }
   .story-photo{width:100%;height:100%;border-radius:50%;background:var(--card);padding:2.5px;box-sizing:border-box;}
   .story-photo-inner{
