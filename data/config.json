@@ -35,23 +35,28 @@
   "storySlides": [
     {
       "label": "نیم ست مجلسی",
-      "image": "images/1789646994117-1000125500.jpg"
+      "image": "images/1789646994117-1000125500.jpg",
+      "expiresAt": 1794214212843
     },
     {
       "label": "گوشواره مجلسی",
-      "image": "images/1789648320253-1000125521.jpg"
+      "image": "images/1789648320253-1000125521.jpg",
+      "expiresAt": 1794214212843
     },
     {
       "label": "گردنبند مرواریدی",
-      "image": "images/1789648322562-1000125517.jpg"
+      "image": "images/1789648322562-1000125517.jpg",
+      "expiresAt": 1794214212843
     },
     {
       "label": "عینک uv 400 شب/روز",
-      "image": "images/1789648324512-1000125519.jpg"
+      "image": "images/1789648324512-1000125519.jpg",
+      "expiresAt": 1794214212843
     },
     {
       "label": "آینه آرایشی",
-      "image": "images/1789648326541-1000125515.jpg"
+      "image": "images/1789648326541-1000125515.jpg",
+      "expiresAt": 1794214212843
     }
   ],
   "heroSlides": [
