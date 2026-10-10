@@ -114,10 +114,22 @@
   .story-viewer.open{opacity:1;visibility:visible;}
   .story-viewer-media{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background-size:cover;background-position:center;}
   .story-viewer-media img{max-width:100%;max-height:100%;object-fit:contain;display:block;}
+  .story-viewer-progress{
+    position:absolute;top:calc(8px + env(safe-area-inset-top));left:10px;right:10px;z-index:3;
+    display:flex;gap:4px;
+  }
+  .story-viewer-progress .seg{flex:1;height:2.5px;border-radius:2px;background:rgba(255,255,255,.35);overflow:hidden;}
+  .story-viewer-progress .seg i{display:block;height:100%;width:0%;background:#fff;border-radius:2px;}
+  .story-viewer-progress .seg.done i{width:100%;}
+  .story-viewer-progress .seg.active i{animation-name:storyFill;animation-timing-function:linear;animation-fill-mode:forwards;}
+  @keyframes storyFill{from{width:0%;}to{width:100%;}}
+  .story-viewer-tap{position:absolute;top:0;bottom:0;width:32%;z-index:1;}
+  .story-viewer-tap.next{right:0;}
+  .story-viewer-tap.prev{left:0;}
   .story-viewer-top{
     position:absolute;top:0;left:0;right:0;z-index:2;
     display:flex;align-items:center;justify-content:space-between;
-    padding:calc(14px + env(safe-area-inset-top)) 16px 30px;
+    padding:calc(22px + env(safe-area-inset-top)) 16px 30px;
     background:linear-gradient(180deg, rgba(0,0,0,.55), transparent);
   }
   .story-viewer-title{color:#fff;font-weight:700;font-size:15px;}
@@ -620,6 +632,9 @@
   <div class="story-viewer-media" id="storyViewerMedia">
     <img id="storyViewerImg" alt="" style="display:none;">
   </div>
+  <div class="story-viewer-tap prev" id="storyViewerPrev"></div>
+  <div class="story-viewer-tap next" id="storyViewerNext"></div>
+  <div class="story-viewer-progress" id="storyViewerProgress"></div>
   <div class="story-viewer-top">
     <button class="story-viewer-close" id="storyViewerClose">
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2"><path d="M6 6l12 12M18 6L6 18"/></svg>
@@ -765,8 +780,40 @@
   const storyViewerImg = document.getElementById('storyViewerImg');
   const storyViewerTitle = document.getElementById('storyViewerTitle');
   const storyViewerCaption = document.getElementById('storyViewerCaption');
+  const storyViewerProgress = document.getElementById('storyViewerProgress');
+  const STORY_DURATION_MS = 5000; // how long each story stays up before auto-advancing
 
-  function openStoryViewer(item){
+  let storyItems = [];      // current list of .story-item elements (snapshot)
+  let storyIndex = 0;       // which one is showing
+  let storyTimer = null;    // auto-advance timer for the active segment
+
+  function buildStoryProgressBar(){
+    storyViewerProgress.innerHTML = storyItems.map(() => '<div class="seg"><i></i></div>').join('');
+  }
+  function setStoryProgressState(){
+    const segs = storyViewerProgress.querySelectorAll('.seg');
+    segs.forEach((seg, i) => {
+      seg.classList.remove('done', 'active');
+      const bar = seg.querySelector('i');
+      bar.style.animation = 'none';
+      if (i < storyIndex) {
+        seg.classList.add('done');
+      } else if (i === storyIndex) {
+        // restart the fill animation on the active segment
+        void bar.offsetWidth;
+        bar.style.animation = '';
+        bar.style.animationDuration = STORY_DURATION_MS + 'ms';
+        seg.classList.add('active');
+      }
+    });
+  }
+  function clearStoryTimer(){
+    if (storyTimer) { clearTimeout(storyTimer); storyTimer = null; }
+  }
+  function showStoryAt(i){
+    clearStoryTimer();
+    storyIndex = i;
+    const item = storyItems[storyIndex];
     const image = item.dataset.image;
     if (image) {
       storyViewerImg.src = encodeURI(image);
@@ -782,21 +829,41 @@
     const hasDesc = !!item.dataset.desc;
     storyViewerCaption.style.display = hasDesc ? 'block' : 'none';
     storyViewerCaption.textContent = hasDesc ? item.dataset.desc : '';
+    setStoryProgressState();
+    storyTimer = setTimeout(nextStory, STORY_DURATION_MS);
+  }
+  function nextStory(){
+    if (storyIndex >= storyItems.length - 1) { closeStoryViewer(); return; }
+    showStoryAt(storyIndex + 1);
+  }
+  function prevStory(){
+    if (storyIndex <= 0) { showStoryAt(storyIndex); return; }
+    showStoryAt(storyIndex - 1);
+  }
+  function openStoryViewer(startIndex){
+    storyItems = Array.from(track.querySelectorAll('.story-item'));
+    if (!storyItems.length) return;
+    buildStoryProgressBar();
     storyViewer.classList.add('open');
+    showStoryAt(startIndex);
   }
   function closeStoryViewer(){
+    clearStoryTimer();
     storyViewer.classList.remove('open');
     storyViewerImg.src = '';
   }
   document.getElementById('storyViewerClose').addEventListener('click', closeStoryViewer);
+  document.getElementById('storyViewerNext').addEventListener('click', nextStory);
+  document.getElementById('storyViewerPrev').addEventListener('click', prevStory);
   storyViewer.addEventListener('click', (e) => { if (e.target === storyViewer) closeStoryViewer(); });
 
-  // Tapping any story opens it full-screen — the whole photo is shown
-  // (never cropped), with the title and description over it.
+  // Tapping any story opens it full-screen and starts auto-advancing through
+  // the rest of the row, Instagram-style (progress bar fills, then moves on).
   track.addEventListener('click', (e) => {
     const item = e.target.closest('.story-item');
     if (!item) return;
-    openStoryViewer(item);
+    const items = Array.from(track.querySelectorAll('.story-item'));
+    openStoryViewer(items.indexOf(item));
   });
 
   function escapeHtml(str){
@@ -932,8 +999,12 @@
     });
   }
   function renderAndHydrateStories(stories){
-    renderStories(stories);
-    hydrateStoryImages(stories);
+    // Drop any story whose expiry date (set in the admin panel) has passed —
+    // it simply stops showing on the site once that date hits, no manual cleanup needed.
+    const now = Date.now();
+    const visible = (stories || []).filter(s => !s.expiresAt || s.expiresAt > now);
+    renderStories(visible);
+    hydrateStoryImages(visible);
   }
 
   /* ---- Hero banner: big auto-moving cards above the story row ---- */

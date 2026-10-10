@@ -187,7 +187,7 @@
     </div>
     <div class="card">
       <h2>استوری‌ها (ردیف دایره‌ای زیر هدر)</h2>
-      <p class="help">برای هر استوری یه عکس و یه عنوان کوتاه بذارید. عکس مربعی (مثلاً ۶۰۰×۶۰۰) بهترین نتیجه رو می‌ده. اگه عکس جدید انتخاب نکنید، عکس قبلی همون استوری حفظ می‌شه.</p>
+      <p class="help">برای هر استوری یه عکس و یه عنوان کوتاه بذارید. عکس مربعی (مثلاً ۶۰۰×۶۰۰) بهترین نتیجه رو می‌ده. اگه عکس جدید انتخاب نکنید، عکس قبلی همون استوری حفظ می‌شه. برای هر استوری می‌تونید تعیین کنید چند روز روی سایت بمونه (۲ روز، ۳ روز، ۱ هفته، ۱ ماه یا بدون انقضا)؛ بعد از اون تاریخ، خودکار از سایت حذف می‌شه.</p>
       <button class="btn btn-secondary" id="loadStoriesBtn">بارگذاری استوری‌های فعلی</button>
       <div id="storyRows"></div>
       <button class="btn btn-primary" id="saveStoriesBtn">ذخیره استوری‌ها</button>
@@ -705,19 +705,43 @@
     }
   });
 
-  function buildSlideRow(index, existing, rowLabel){
+  // Human-readable "X روز/ساعت دیگر" countdown shown under the expiry picker.
+  function describeRemaining(expiresAt){
+    const ms = expiresAt - Date.now();
+    if (ms <= 0) return 'منقضی شده (دیگه روی سایت نشون داده نمی‌شه)';
+    const days = Math.floor(ms / 86400000);
+    const hours = Math.floor((ms % 86400000) / 3600000);
+    if (days >= 1) return `تا ${days} روز و ${hours} ساعت دیگه روی سایت می‌مونه`;
+    return `تا ${hours} ساعت دیگه روی سایت می‌مونه`;
+  }
+
+  function buildSlideRow(index, existing, rowLabel, hasExpiry){
     const wrap = document.createElement('div');
     wrap.className = 'slide-row';
     wrap.style.borderTop = '1px solid #EEEEEC';
     wrap.style.paddingTop = '12px';
     wrap.style.marginTop = '12px';
     wrap.dataset.existingImage = (existing && existing.image) || '';
+    wrap.dataset.existingExpiry = (existing && existing.expiresAt) || '';
+    const expiryHtml = !hasExpiry ? '' : `
+      <label>مدت نمایش استوری</label>
+      <select class="slide-expiry">
+        ${existing && existing.expiresAt ? '<option value="">بدون تغییر (مدت فعلی حفظ شود)</option>' : ''}
+        <option value="none"${!(existing && existing.expiresAt) ? ' selected' : ''}>بدون انقضا (همیشه بمونه)</option>
+        <option value="2d">۲ روز از همین الان</option>
+        <option value="3d">۳ روز از همین الان</option>
+        <option value="7d">۱ هفته از همین الان</option>
+        <option value="30d">۱ ماه از همین الان</option>
+      </select>
+      ${existing && existing.expiresAt ? `<p class="help" style="margin-top:4px;">${describeRemaining(existing.expiresAt)}</p>` : ''}
+    `;
     wrap.innerHTML = `
       <label style="margin-top:0;">${rowLabel} ${index + 1} — ${rowLabel === 'استوری' ? 'عنوان کوتاه' : 'متن روی عکس'}</label>
       <input type="text" class="slide-label" value="${(existing && existing.label) ? existing.label.replace(/"/g,'&quot;') : ''}" placeholder="مثلاً: بدلیجات">
       <label>عکس ${existing && existing.image ? '(اگه عکس جدید انتخاب نکنید، همین عکس فعلی می‌مونه)' : ''}</label>
       <input type="file" class="slide-file" accept="image/*">
       ${existing && existing.image ? `<img class="thumb" style="display:block;" src="${existing.image.startsWith('http') ? existing.image : ('https://raw.githubusercontent.com/' + els.owner.value.trim() + '/' + els.repo.value.trim() + '/' + els.branch.value.trim() + '/' + existing.image)}">` : ''}
+      ${expiryHtml}
       <div class="check"><input type="checkbox" class="slide-remove"><label style="margin:0;color:var(--muted);font-weight:400;">حذف این ${rowLabel === 'استوری' ? 'استوری' : 'کارت'}</label></div>
     `;
     const fileInput = wrap.querySelector('.slide-file');
@@ -737,7 +761,9 @@
   // Shared logic for both the "استوری‌ها" section (configKey: storySlides)
   // and the "کارت‌های بزرگ هدر" section (configKey: heroSlides) — they are
   // saved and loaded completely independently of each other.
-  function wireSlideSection(configKey, rowsId, loadBtnId, saveBtnId, statusId, rowLabel, itemNamePersian){
+  const EXPIRY_MS = { '2d': 2*86400000, '3d': 3*86400000, '7d': 7*86400000, '30d': 30*86400000 };
+
+  function wireSlideSection(configKey, rowsId, loadBtnId, saveBtnId, statusId, rowLabel, itemNamePersian, hasExpiry){
     document.getElementById(loadBtnId).addEventListener('click', async () => {
       try {
         validateCfg();
@@ -750,7 +776,7 @@
         const wrap = document.getElementById(rowsId);
         wrap.innerHTML = '';
         for (let i = 0; i < 5; i++) {
-          wrap.appendChild(buildSlideRow(i, existingSlides[i], rowLabel));
+          wrap.appendChild(buildSlideRow(i, existingSlides[i], rowLabel, hasExpiry));
         }
         document.getElementById(statusId).className = 'status';
       } catch (e) {
@@ -790,7 +816,21 @@
             }
           }
           if (!image && !label) continue; // fully empty row, skip
-          slides.push({ label, image });
+
+          const slide = { label, image };
+          if (hasExpiry) {
+            const expirySel = row.querySelector('.slide-expiry') ? row.querySelector('.slide-expiry').value : '';
+            const existingExpiry = row.dataset.existingExpiry ? Number(row.dataset.existingExpiry) : null;
+            if (expirySel === '') {
+              // "بدون تغییر" — keep whatever expiry (or lack of one) it already had
+              if (existingExpiry) slide.expiresAt = existingExpiry;
+            } else if (expirySel === 'none') {
+              // no expiresAt field — stays up forever
+            } else if (EXPIRY_MS[expirySel]) {
+              slide.expiresAt = Date.now() + EXPIRY_MS[expirySel];
+            }
+          }
+          slides.push(slide);
         }
 
         if (!slides.length) { setStatus(statusId, 'err', `حداقل یه ${itemNamePersian} با عکس یا متن لازمه.`); return; }
@@ -809,8 +849,8 @@
     });
   }
 
-  wireSlideSection('storySlides', 'storyRows', 'loadStoriesBtn', 'saveStoriesBtn', 'storiesStatus', 'استوری', 'استوری‌ها');
-  wireSlideSection('heroSlides', 'slideRows', 'loadSlidesBtn', 'saveHeaderBtn', 'headerStatus', 'کارت', 'کارت‌های هدر');
+  wireSlideSection('storySlides', 'storyRows', 'loadStoriesBtn', 'saveStoriesBtn', 'storiesStatus', 'استوری', 'استوری‌ها', true);
+  wireSlideSection('heroSlides', 'slideRows', 'loadSlidesBtn', 'saveHeaderBtn', 'headerStatus', 'کارت', 'کارت‌های هدر', false);
 
   // ---------- List / delete ----------
   async function refreshList(){
