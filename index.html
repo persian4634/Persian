@@ -1040,6 +1040,7 @@
     storyInput.value = ''; storyBar.classList.remove('typing'); storyInput.blur();
     storyViewer.classList.remove('open');
     storyViewerImg.src = '';
+    applySeenStories();
   }
   document.getElementById('storyViewerClose').addEventListener('click', closeStoryViewer);
   document.getElementById('storyViewerNext').addEventListener('click', nextStory);
@@ -1066,16 +1067,24 @@
   function storyKey(item){ return (item.dataset.title || '') + '|' + (item.dataset.image || ''); }
   function readStore(name){ try { return JSON.parse(localStorage.getItem(name) || '{}') || {}; } catch(e){ return {}; } }
   function writeStore(name, obj){ try { localStorage.setItem(name, JSON.stringify(obj)); } catch(e){} }
+  const seenMemory = {};   // fallback for browsers that block localStorage
   function markStorySeen(item){
+    const k = storyKey(item);
+    seenMemory[k] = 1;
     const seen = readStore('storySeen');
-    seen[storyKey(item)] = 1;
+    seen[k] = 1;
     writeStore('storySeen', seen);
     item.classList.add('seen');
   }
   function applySeenStories(){
     const seen = readStore('storySeen');
-    track.querySelectorAll('.story-item').forEach(it => it.classList.toggle('seen', !!seen[storyKey(it)]));
+    track.querySelectorAll('.story-item').forEach(it => {
+      const k = storyKey(it);
+      it.classList.toggle('seen', !!(seen[k] || seenMemory[k]));
+    });
   }
+  applySeenStories();                                   // static default row, on page load
+  window.addEventListener('pageshow', applySeenStories); // back/forward cache
   function syncLikeButton(){
     const likes = readStore('storyLikes');
     storyLikeBtn.classList.toggle('liked', !!likes[storyKey(storyItems[storyIndex])]);
