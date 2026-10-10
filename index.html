@@ -60,27 +60,40 @@
   .round-btn svg{width:18px;height:18px;stroke:var(--text);}
   .round-btn.active svg{stroke:var(--blue);}
 
-  /* ---- Hero banner (big auto-moving carousel, sits above the story row) ---- */
-  .hero-wrap{overflow:hidden;padding:16px 0 6px;direction:ltr;}
-  .hero-track{display:flex;gap:14px;width:max-content;padding:0 20px;animation:heroScroll 34s linear infinite;direction:ltr;}
-  .hero-wrap.paused .hero-track{animation-play-state:paused;}
-  @keyframes heroScroll{
-    from{transform:translateX(0);}
-    to{transform:translateX(-50%);}
+  /* ---- Hero slider (boxed, one slide at a time, auto-play + arrows + dots) ---- */
+  .hero-wrap{padding:16px 20px 6px;direction:ltr;}
+  .hero-box{position:relative;aspect-ratio:4/3;border-radius:28px;overflow:hidden;background:#222;box-shadow:var(--shadow);}
+  .hero-track{display:flex;height:100%;transition:transform .7s cubic-bezier(.65,.05,.25,1);will-change:transform;}
+  .hero-slide{flex:0 0 100%;height:100%;position:relative;overflow:hidden;direction:rtl;display:flex;flex-direction:column;justify-content:space-between;padding:20px;}
+  .hero-bg{
+    position:absolute;inset:0;background:linear-gradient(155deg,var(--h1,#5FCFC0),var(--h2,#1E7E76));
+    background-size:cover;background-position:center;transform:scale(1.12);
+    transition:transform 6s ease-out;
   }
-  .hero-card{
-    flex:0 0 auto;width:170px;height:290px;border-radius:24px;
-    background:linear-gradient(155deg,var(--h1,#5FCFC0),var(--h2,#1E7E76));
-    box-shadow:var(--shadow);position:relative;overflow:hidden;
-    display:flex;flex-direction:column;justify-content:space-between;padding:18px;
-    background-size:cover;background-position:center;
-    direction:rtl;
+  .hero-slide.active .hero-bg{transform:scale(1);}
+  .hero-slide::after{content:'';position:absolute;inset:0;background:linear-gradient(0deg, rgba(0,0,0,.55), rgba(0,0,0,0) 60%);}
+  .hero-ico,.hero-cap{position:relative;z-index:1;}
+  .hero-ico{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.22);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;
+    opacity:0;transform:scale(.6);transition:opacity .5s ease .25s,transform .5s ease .25s;}
+  .hero-ico svg{width:21px;height:21px;stroke:#fff;}
+  .hero-cap{text-align:center;opacity:0;transform:translateY(14px);transition:opacity .55s ease .3s,transform .55s ease .3s;}
+  .hero-slide.active .hero-ico{opacity:1;transform:scale(1);}
+  .hero-slide.active .hero-cap{opacity:1;transform:none;}
+  .hero-label{color:#fff;font-size:24px;font-weight:800;}
+  .hero-sub{color:rgba(255,255,255,.85);font-size:13.5px;margin-top:4px;}
+  .hero-arrow{
+    position:absolute;top:50%;transform:translateY(-50%);z-index:3;
+    width:38px;height:38px;border-radius:50%;border:none;padding:0;cursor:pointer;
+    background:rgba(255,255,255,.35);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+    display:flex;align-items:center;justify-content:center;transition:background .2s,transform .2s;
   }
-  .hero-card::after{content:'';position:absolute;inset:0;background:linear-gradient(0deg, rgba(0,0,0,.42), rgba(0,0,0,0) 55%);}
-  .hero-card .hero-ico,.hero-card .hero-label{position:relative;z-index:1;}
-  .hero-card .hero-ico{width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;}
-  .hero-card .hero-ico svg{width:20px;height:20px;stroke:#fff;}
-  .hero-card .hero-label{color:#fff;font-size:20px;font-weight:800;}
+  .hero-arrow svg{width:18px;height:18px;stroke:#fff;}
+  .hero-arrow:active{transform:translateY(-50%) scale(.9);background:rgba(255,255,255,.55);}
+  .hero-arrow.prev{left:12px;} .hero-arrow.next{right:12px;}
+  .hero-dots{display:flex;justify-content:center;gap:8px;padding-top:12px;}
+  .hero-dots button{width:9px;height:9px;border-radius:50%;border:none;padding:0;background:rgba(138,138,142,.4);cursor:pointer;transition:width .35s ease,background .35s ease;}
+  .hero-dots button.on{width:24px;border-radius:6px;background:var(--blue);}
+  .hero-wrap.single .hero-arrow,.hero-wrap.single .hero-dots{display:none;}
 
   /* ---- Stories row (static, swipe-to-scroll, Instagram-style) ---- */
   .stories-wrap{
@@ -471,23 +484,14 @@
     </div>
   </header>
 
-  <!-- Auto-moving hero banner (big cards, loops continuously). Rendered
-       twice back-to-back directly in HTML (not only by JS) so it never
-       shows blank while the page loads; the CSS animation shifts the row
-       by exactly 50% (= one copy) so it loops with no jump/no gap. -->
+  <!-- Hero slider: one boxed slide at a time. Auto-plays, arrows + dots + swipe. -->
   <div class="hero-wrap" id="heroWrap">
-    <div class="hero-track" id="heroTrack">
-      <div class="hero-card" style="--h1:#F4C452;--h2:#C98A1E;"><div class="hero-ico"><svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.3" fill="#fff" stroke="none"/></svg></div><div class="hero-label">بدلیجات</div></div>
-      <div class="hero-card" style="--h1:#C782D9;--h2:#6E3E9C;"><div class="hero-ico"><svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><path d="M4 12c3-4 6-4 8 0s5 4 8 0"/></svg></div><div class="hero-label">کش و کلیپس</div></div>
-      <div class="hero-card" style="--h1:#5FCFC0;--h2:#1E7E76;"><div class="hero-ico"><svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><circle cx="7" cy="13" r="3.2"/><circle cx="17" cy="13" r="3.2"/><path d="M10.2 13h3.6M3.6 13l1.5-5h13.8l1.5 5"/></svg></div><div class="hero-label">عینک آفتابی</div></div>
-      <div class="hero-card" style="--h1:#E7727E;--h2:#8C2E3D;"><div class="hero-ico"><svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><circle cx="8" cy="8" r="3.8"/><path d="M10.7 10.7l8.3 8.3M15.4 15.4l1.8-1.8M17.9 17.9l1.8-1.8"/></svg></div><div class="hero-label">جاکلیدی</div></div>
-      <div class="hero-card" style="--h1:#6E93F0;--h2:#2E4CA8;"><div class="hero-ico"><svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><path d="M3 12h13l4 4M3 12l4-4M3 12l4 4"/></svg></div><div class="hero-label">ارسال ویژه</div></div>
-      <div class="hero-card" style="--h1:#F4C452;--h2:#C98A1E;"><div class="hero-ico"><svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.3" fill="#fff" stroke="none"/></svg></div><div class="hero-label">بدلیجات</div></div>
-      <div class="hero-card" style="--h1:#C782D9;--h2:#6E3E9C;"><div class="hero-ico"><svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><path d="M4 12c3-4 6-4 8 0s5 4 8 0"/></svg></div><div class="hero-label">کش و کلیپس</div></div>
-      <div class="hero-card" style="--h1:#5FCFC0;--h2:#1E7E76;"><div class="hero-ico"><svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><circle cx="7" cy="13" r="3.2"/><circle cx="17" cy="13" r="3.2"/><path d="M10.2 13h3.6M3.6 13l1.5-5h13.8l1.5 5"/></svg></div><div class="hero-label">عینک آفتابی</div></div>
-      <div class="hero-card" style="--h1:#E7727E;--h2:#8C2E3D;"><div class="hero-ico"><svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><circle cx="8" cy="8" r="3.8"/><path d="M10.7 10.7l8.3 8.3M15.4 15.4l1.8-1.8M17.9 17.9l1.8-1.8"/></svg></div><div class="hero-label">جاکلیدی</div></div>
-      <div class="hero-card" style="--h1:#6E93F0;--h2:#2E4CA8;"><div class="hero-ico"><svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><path d="M3 12h13l4 4M3 12l4-4M3 12l4 4"/></svg></div><div class="hero-label">ارسال ویژه</div></div>
+    <div class="hero-box">
+      <div class="hero-track" id="heroTrack"></div>
+      <button type="button" class="hero-arrow prev" id="heroPrev" aria-label="قبلی"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+      <button type="button" class="hero-arrow next" id="heroNext" aria-label="بعدی"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>
     </div>
+    <div class="hero-dots" id="heroDots"></div>
   </div>
 
   <!-- Static, Instagram-style story row (does not auto-scroll; swipe to browse) -->
@@ -1151,9 +1155,10 @@
     hydrateStoryImages(visible);
   }
 
-  /* ---- Hero banner: big auto-moving cards above the story row ---- */
+  /* ---- Hero slider: one boxed slide at a time, auto-play + arrows + dots + swipe ---- */
   const heroTrack = document.getElementById('heroTrack');
   const heroWrap = document.getElementById('heroWrap');
+  const heroDots = document.getElementById('heroDots');
   const heroSlides = [
     { label:'بدلیجات', h1:'#F4C452', h2:'#C98A1E', icon:'<svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.3" fill="#fff" stroke="none"/></svg>' },
     { label:'کش و کلیپس', h1:'#C782D9', h2:'#6E3E9C', icon:'<svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><path d="M4 12c3-4 6-4 8 0s5 4 8 0"/></svg>' },
@@ -1161,30 +1166,59 @@
     { label:'جاکلیدی', h1:'#E7727E', h2:'#8C2E3D', icon:'<svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><circle cx="8" cy="8" r="3.8"/><path d="M10.7 10.7l8.3 8.3M15.4 15.4l1.8-1.8M17.9 17.9l1.8-1.8"/></svg>' },
     { label:'ارسال ویژه', h1:'#6E93F0', h2:'#2E4CA8', icon:'<svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><path d="M3 12h13l4 4M3 12l4-4M3 12l4 4"/></svg>' }
   ];
-  function renderHero(slides){
-    let list = (slides && slides.length) ? slides.slice() : heroSlides;
-    const base = list.slice();
-    while (list.length < 5) { list = list.concat(base); } // pad short admin lists so the loop never runs dry
-    // Doubled list + CSS animation that shifts exactly 50% = one full copy,
-    // so the row loops from the last slide straight back into the first
-    // one with no jump and no empty gap, at a slow constant speed.
-    const doubled = list.concat(list);
-    heroTrack.innerHTML = doubled.map(s => {
-      const bg = s.image ? `background-image:url('${encodeURI(s.image)}');` : `--h1:${s.h1 || '#5FCFC0'};--h2:${s.h2 || '#1E7E76'};`;
-      return `<div class="hero-card" style="${bg}">
-        <div class="hero-ico">${s.icon || ''}</div>
+  const HERO_DELAY = 4500;
+  let heroList = [], heroIndex = 0, heroTimer = null, heroHold = false;
+
+  function heroSlideHTML(s){
+    const bg = s.image ? `background-image:url('${encodeURI(s.image)}');` : `--h1:${s.h1 || '#5FCFC0'};--h2:${s.h2 || '#1E7E76'};`;
+    return `<div class="hero-slide">
+      <div class="hero-bg" style="${bg}"></div>
+      <div class="hero-ico">${s.icon || ''}</div>
+      <div class="hero-cap">
         <div class="hero-label">${escapeHtml(s.label || '')}</div>
-      </div>`;
-    }).join('');
+        ${s.sub ? `<div class="hero-sub">${escapeHtml(s.sub)}</div>` : ''}
+      </div>
+    </div>`;
   }
-  // The static markup above already shows the default set; renderHero()
-  // is only called again below if admin-configured slides come in.
-  // Pause the drift only while the user is actively pressing on it.
-  let heroResumeTimer;
-  function pauseHero(){ heroWrap.classList.add('paused'); clearTimeout(heroResumeTimer); }
-  function resumeHeroSoon(){ clearTimeout(heroResumeTimer); heroResumeTimer = setTimeout(() => heroWrap.classList.remove('paused'), 1200); }
-  ['touchstart','pointerdown'].forEach(evt => heroWrap.addEventListener(evt, pauseHero, {passive:true}));
-  ['touchend','pointerup','pointercancel'].forEach(evt => heroWrap.addEventListener(evt, resumeHeroSoon, {passive:true}));
+  function heroGo(i){
+    if (!heroList.length) return;
+    heroIndex = (i + heroList.length) % heroList.length;
+    heroTrack.style.transform = `translateX(${-100 * heroIndex}%)`;
+    Array.from(heroTrack.children).forEach((el, k) => el.classList.toggle('active', k === heroIndex));
+    Array.from(heroDots.children).forEach((el, k) => el.classList.toggle('on', k === heroIndex));
+  }
+  function heroStart(){
+    clearInterval(heroTimer);
+    if (heroList.length < 2) return;
+    heroTimer = setInterval(() => { if (!heroHold && !document.hidden) heroGo(heroIndex + 1); }, HERO_DELAY);
+  }
+  function renderHero(slides){
+    heroList = (slides && slides.length) ? slides.slice() : heroSlides.slice();
+    heroTrack.innerHTML = heroList.map(heroSlideHTML).join('');
+    heroDots.innerHTML = heroList.map((_, k) => `<button type="button" aria-label="اسلاید ${k + 1}"></button>`).join('');
+    Array.from(heroDots.children).forEach((b, k) => b.addEventListener('click', () => { heroGo(k); heroStart(); }));
+    heroWrap.classList.toggle('single', heroList.length < 2);
+    heroGo(0);
+    heroStart();
+  }
+  // Slider is LTR even on the RTL page: left arrow = previous, right arrow = next
+  document.getElementById('heroPrev').addEventListener('click', () => { heroGo(heroIndex - 1); heroStart(); });
+  document.getElementById('heroNext').addEventListener('click', () => { heroGo(heroIndex + 1); heroStart(); });
+  // Swipe + pause while the finger is down
+  let heroX0 = null, heroDX = 0;
+  heroWrap.addEventListener('touchstart', e => { heroHold = true; clearTimeout(window._heroRel); window._heroRel = setTimeout(() => { heroHold = false; }, 6000); heroX0 = e.touches[0].clientX; heroDX = 0; }, {passive:true});
+  heroWrap.addEventListener('touchmove', e => { if (heroX0 !== null) heroDX = e.touches[0].clientX - heroX0; }, {passive:true});
+  heroWrap.addEventListener('touchend', () => {
+    if (Math.abs(heroDX) > 40) { heroGo(heroIndex + (heroDX < 0 ? 1 : -1)); heroStart(); }
+    heroX0 = null; heroHold = false;
+  });
+  // Pause-on-hover only for real mouse devices (on phones the emulated mouseenter never gets a mouseleave and froze the slider)
+  if (window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+    heroWrap.addEventListener('mouseenter', () => { heroHold = true; });
+    heroWrap.addEventListener('mouseleave', () => { heroHold = false; });
+  }
+  heroWrap.addEventListener('touchcancel', () => { heroX0 = null; heroHold = false; }, {passive:true});
+  renderHero(); // default slides; replaced below if admin-configured slides come in
 
   /* ---- Load posts (products / announcements / showcase cards) added from admin.html ---- */
   fetch('data/posts.json', {cache:'no-store'})
