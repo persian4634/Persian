@@ -168,13 +168,17 @@
     </div>
     <div class="card">
       <h2>درباره ما / قوانین و مقررات</h2>
-      <p class="help">این متن‌ها با زدن لینک‌های «درباره ما» و «قوانین و مقررات» پایین صفحه سایت نشون داده می‌شن.</p>
-      <label style="margin-top:0;">متن «درباره ما»</label>
+      <p class="help">این متن‌ها و عکس با زدن لینک «درباره ما» (پایین صفحه سایت) نشون داده می‌شن.</p>
+      <label style="margin-top:0;">عکس آواتار صفحه «درباره ما»</label>
+      <p class="help" style="margin-top:0;">این عکس، جدا از لوگوی هدر سایته — مخصوص دایره‌ی بالای صفحه «درباره ما»ست. عکس مربعی (مثلاً ۴۰۰×۴۰۰) بهترین نتیجه رو می‌ده. اگه عکس جدید انتخاب نکنید، عکس قبلی حفظ می‌شه.</p>
+      <input type="file" id="aboutAvatarImage" accept="image/*">
+      <img id="aboutAvatarPreview" class="thumb">
+      <label>متن «درباره ما»</label>
       <textarea id="aboutTextInput" placeholder="چند خط درباره فروشگاه‌تون بنویسید..."></textarea>
       <label>متن «قوانین و مقررات» (شامل شرایط مرجوعی کالا)</label>
       <textarea id="termsTextInput" placeholder="قوانین فروش، شرایط ارسال و مرجوعی کالا رو اینجا بنویسید..."></textarea>
-      <button class="btn btn-secondary" id="loadPagesBtn">بارگذاری متن‌های فعلی</button>
-      <button class="btn btn-primary" id="savePagesBtn">ذخیره متن‌ها</button>
+      <button class="btn btn-secondary" id="loadPagesBtn">بارگذاری متن‌ها و عکس فعلی</button>
+      <button class="btn btn-primary" id="savePagesBtn">ذخیره متن‌ها و عکس</button>
       <div class="status" id="pagesStatus"></div>
     </div>
     <div class="card">
@@ -567,6 +571,14 @@
     else { prev.style.display = 'none'; }
   });
 
+  const aboutAvatarImage = document.getElementById('aboutAvatarImage');
+  aboutAvatarImage.addEventListener('change', () => {
+    const f = aboutAvatarImage.files[0];
+    const prev = document.getElementById('aboutAvatarPreview');
+    if (f) { prev.src = URL.createObjectURL(f); prev.style.display = 'block'; }
+    else { prev.style.display = 'none'; }
+  });
+
   async function saveConfigPatch(patch){
     const current = await ghGetFile('data/config.json');
     let config = {};
@@ -671,6 +683,14 @@
       if (current.exists) { try { config = JSON.parse(current.content); } catch(e){ config = {}; } }
       document.getElementById('aboutTextInput').value = config.aboutText || '';
       document.getElementById('termsTextInput').value = config.termsText || '';
+      const avatarPrev = document.getElementById('aboutAvatarPreview');
+      avatarPrev.dataset.existing = config.aboutAvatar || '';
+      if (config.aboutAvatar) {
+        avatarPrev.src = config.aboutAvatar.startsWith('http') ? config.aboutAvatar : ('https://raw.githubusercontent.com/' + els.owner.value.trim() + '/' + els.repo.value.trim() + '/' + els.branch.value.trim() + '/' + config.aboutAvatar);
+        avatarPrev.style.display = 'block';
+      } else {
+        avatarPrev.style.display = 'none';
+      }
       document.getElementById('pagesStatus').className = 'status';
     } catch (e) {
       setStatus('pagesStatus', 'err', 'خطا: ' + errMsg(e));
@@ -683,9 +703,18 @@
       persistCfgIfNeeded();
       const aboutText = document.getElementById('aboutTextInput').value.trim();
       const termsText = document.getElementById('termsTextInput').value.trim();
+      const avatarPrev = document.getElementById('aboutAvatarPreview');
+      const avatarFile = aboutAvatarImage.files[0];
+      let aboutAvatar = avatarPrev.dataset.existing || '';
+      if (avatarFile) {
+        setStatus('pagesStatus', 'busy', 'در حال آپلود عکس آواتار...');
+        aboutAvatar = await ghUploadImage(avatarFile);
+      }
       setStatus('pagesStatus', 'busy', 'در حال ذخیره تنظیمات...');
-      await saveConfigPatch({ aboutText, termsText });
-      setStatus('pagesStatus', 'ok', 'متن‌ها ذخیره شدن 🎉');
+      const patch = { aboutText, termsText };
+      if (aboutAvatar) patch.aboutAvatar = aboutAvatar;
+      await saveConfigPatch(patch);
+      setStatus('pagesStatus', 'ok', 'متن‌ها و عکس ذخیره شدن 🎉');
     } catch (e) {
       setStatus('pagesStatus', 'err', 'خطا: ' + errMsg(e));
     }
