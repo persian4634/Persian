@@ -16,6 +16,7 @@
     --blue:#4C6FF0;
     --green:#4CAF6D;
     --shadow:0 16px 30px -18px rgba(28,28,30,0.28);
+    --shell-w:460px;
   }
   html[data-theme="dark"]{
     --bg:#121214;
@@ -33,66 +34,243 @@
     display:flex;justify-content:center;
     transition:background .3s ease,color .3s ease;
   }
+
+  /* ---- Details page (opens when a hero slide is tapped) ---- */
+  .detail{
+    position:fixed;inset:0;z-index:95;background:var(--bg);overflow-y:auto;overscroll-behavior:contain;
+    visibility:hidden;opacity:0;transform:translateY(24px);
+    transition:opacity .3s ease,transform .3s ease,visibility 0s linear .3s;
+  }
+  .detail.open{visibility:visible;opacity:1;transform:none;transition-delay:0s;}
+  .detail-bar{
+    --hi:#fff; --hbg:rgba(0,0,0,.32);
+    position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:8px;
+    padding:calc(14px + env(safe-area-inset-top)) 16px 12px;margin-bottom:-68px;
+    transition:background .3s ease;
+  }
+  .detail-bar.scrolled{
+    --hi:var(--text); --hbg:rgba(128,128,128,.16);
+    background:rgba(var(--card-rgb),.78);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);margin-bottom:-68px;
+  }
+  .detail-bar .bar-title{flex:1;min-width:0;text-align:center;font-weight:800;font-size:15px;color:var(--hi);opacity:0;transition:opacity .25s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .detail-bar.scrolled .bar-title{opacity:1;}
+  .detail-hero{position:relative;overflow:hidden;padding:calc(92px + env(safe-area-inset-top)) 20px 28px;}
+  .detail-bg{
+    position:absolute;inset:-20px;background:linear-gradient(155deg,var(--h1,#5FCFC0),var(--h2,#1E7E76));
+    background-size:cover;background-position:center;filter:blur(14px) saturate(120%);transform:scale(1.1);
+  }
+  .detail-hero::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.35),rgba(0,0,0,.15) 40%,var(--bg) 100%);}
+  .detail-wrap{position:relative;z-index:1;max-width:980px;margin:0 auto;}
+  .detail-top{display:flex;gap:18px;align-items:flex-end;}
+  .detail-poster{
+    flex:0 0 40%;max-width:300px;aspect-ratio:3/4;border-radius:24px;overflow:hidden;position:relative;
+    background:linear-gradient(155deg,var(--h1,#5FCFC0),var(--h2,#1E7E76));background-size:cover;background-position:center;
+    box-shadow:0 22px 40px -18px rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;
+  }
+  .detail-poster svg{width:56px;height:56px;stroke:#fff;}
+  .detail-info{flex:1;min-width:0;padding-bottom:6px;}
+  .detail-info h1{font-size:26px;font-weight:800;margin:0 0 8px;line-height:1.4;color:#fff;text-shadow:0 2px 12px rgba(0,0,0,.4);}
+  .detail-info .d-sub{font-size:13.5px;line-height:1.85;color:rgba(255,255,255,.9);margin:0 0 12px;}
+  .d-chips{display:flex;flex-wrap:wrap;gap:8px;}
+  .d-chip{padding:6px 13px;border-radius:14px;font-size:12px;font-weight:600;background:rgba(255,255,255,.2);color:#fff;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
+  .detail-body{max-width:980px;margin:0 auto;padding:6px 20px calc(40px + env(safe-area-inset-bottom));}
+  .d-actions{display:flex;gap:12px;flex-wrap:wrap;margin:18px 0 8px;}
+  .d-btn{
+    flex:1 1 220px;display:flex;align-items:center;justify-content:center;gap:10px;height:54px;border-radius:18px;
+    font-size:15px;font-weight:700;cursor:pointer;border:2px solid var(--blue);color:var(--blue);background:rgba(76,111,240,.1);
+    transition:background .2s,transform .2s;
+  }
+  .d-btn:hover{background:rgba(76,111,240,.2);}
+  .d-btn:active{transform:scale(.98);}
+  .d-btn.solid{background:var(--blue);color:#fff;}
+  .d-btn svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+  .d-tabs{display:flex;gap:6px;margin:20px 0 14px;border-bottom:1px solid rgba(128,128,128,.18);}
+  .d-tab{
+    flex:1;background:none;border:none;padding:13px 6px;font-size:15px;font-weight:700;color:var(--muted);cursor:pointer;
+    border-bottom:3px solid transparent;margin-bottom:-1px;transition:color .2s,border-color .2s;
+  }
+  .d-tab.on{color:var(--blue);border-bottom-color:var(--blue);}
+  .d-pane{display:none;background:var(--card);border-radius:22px;padding:22px 20px;box-shadow:var(--shadow);animation:dFade .3s ease;}
+  .d-pane.on{display:block;}
+  @keyframes dFade{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+  .d-pane h3{font-size:16px;margin:0 0 10px;}
+  .d-text{font-size:14.5px;line-height:2;color:var(--muted);white-space:pre-line;margin:0;}
+  .d-brands{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px;}
+  .d-brand{display:flex;flex-direction:column;align-items:center;gap:10px;padding:18px 10px;border-radius:18px;background:rgba(128,128,128,.08);text-align:center;}
+  .d-brand i{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-style:normal;font-size:22px;font-weight:800;color:#fff;background:linear-gradient(155deg,var(--h1,#5FCFC0),var(--h2,#1E7E76));}
+  .d-brand b{font-size:13.5px;word-break:break-word;direction:ltr;}
+  .d-input{
+    width:100%;border:1.5px solid rgba(128,128,128,.25);background:transparent;color:var(--text);border-radius:14px;
+    font-family:inherit;font-size:15px;padding:13px 15px;margin-bottom:10px;outline:none;transition:border-color .2s;
+  }
+  .d-input:focus{border-color:var(--blue);}
+  textarea.d-input{min-height:110px;resize:vertical;line-height:1.8;}
+  .d-status{font-size:13px;margin:10px 0 0;min-height:18px;color:var(--muted);}
+  .d-note{font-size:12px;color:var(--muted);margin:0 0 12px;line-height:1.8;}
+
+  /* ---- Login sheet ---- */
+  .login-overlay{position:fixed;inset:0;z-index:100;display:flex;align-items:flex-end;justify-content:center;visibility:hidden;}
+  .login-overlay.open{visibility:visible;}
+  .login-scrim{position:absolute;inset:0;background:rgba(10,8,12,.45);opacity:0;transition:opacity .3s;}
+  .login-overlay.open .login-scrim{opacity:1;}
+  .login-card{
+    position:relative;width:100%;max-width:440px;background:var(--bg);border-radius:26px 26px 0 0;
+    padding:26px 22px calc(26px + env(safe-area-inset-bottom));
+    transform:translateY(100%);transition:transform .32s cubic-bezier(.32,.72,0,1);
+  }
+  .login-overlay.open .login-card{transform:none;}
+  .login-card h3{font-size:21px;font-weight:800;margin:0 0 6px;text-align:center;}
+  .login-card .l-sub{font-size:13px;color:var(--muted);text-align:center;margin:0 0 20px;line-height:1.9;}
+  .login-card .l-close{position:absolute;top:14px;left:14px;width:34px;height:34px;border-radius:50%;border:none;background:rgba(128,128,128,.15);cursor:pointer;display:flex;align-items:center;justify-content:center;}
+  .login-card .l-close svg{width:15px;height:15px;stroke:var(--text);fill:none;stroke-width:2.2;}
+  .l-avatar{width:68px;height:68px;border-radius:50%;margin:0 auto 14px;background:linear-gradient(155deg,#fcaf45,#e1306c);color:#fff;font-size:28px;font-weight:800;display:flex;align-items:center;justify-content:center;}
+  .login-card .d-btn{width:100%;flex:none;}
+  .l-out{margin-top:10px;border-color:#e0405a;color:#e0405a;background:rgba(224,64,90,.08);}
+  .l-out:hover{background:rgba(224,64,90,.16);}
+  @media (min-width:700px){
+    .login-overlay{align-items:center;}
+    .login-card{border-radius:26px;transform:translateY(30px) scale(.97);opacity:0;transition:transform .3s,opacity .3s;}
+    .login-overlay.open .login-card{transform:none;opacity:1;}
+  }
+
+  /* ---- Desktop ---- */
+  @media (min-width:900px){
+    :root{--shell-w:1100px;}
+    .hero-wrap{height:clamp(480px,72vh,700px);border-radius:0 0 40px 40px;}
+    .hero-label{font-size:48px;}
+    .hero-sub{font-size:17px;}
+    .hero-arrow{width:50px;height:50px;} .hero-arrow svg{width:22px;height:22px;}
+    .hero-arrow.prev{left:28px;} .hero-arrow.next{right:28px;}
+    header{padding-left:28px;padding-right:28px;}
+    .logo{font-size:28px;} .logo-img{height:52px;max-width:180px;}
+    .shell > :not(header):not(.hero-wrap){max-width:720px;margin-left:auto;margin-right:auto;}
+    .bottom-nav{max-width:520px;border-radius:22px 22px 0 0;}
+    .detail-info h1{font-size:42px;}
+    .detail-info .d-sub{font-size:16px;}
+    .detail-poster{flex-basis:300px;}
+    .detail-top{gap:36px;}
+    .detail-hero{padding-bottom:40px;}
+    .d-tab{font-size:16px;}
+  }
+  @media (hover:hover){ .hero-slide{cursor:pointer;} }
   @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important;}}
   a{color:inherit;}
   button{font-family:inherit;}
-  .shell{width:100%;max-width:460px;min-height:100vh;position:relative;padding-bottom:104px;}
+  .shell{width:100%;max-width:var(--shell-w);min-height:100vh;position:relative;padding-bottom:104px;}
 
-  /* ---- Header (frosted / transparent) ---- */
+  /* ---- Header: transparent over the hero, frosted after scrolling ---- */
   header{
-    position:sticky;top:0;z-index:50;
-    display:flex;align-items:center;justify-content:space-between;
-    padding:20px 20px 14px;
-    background:rgba(var(--card-rgb),0.55);
+    --hi:#fff; --hbg:rgba(0,0,0,.32);
+    position:fixed;top:0;left:50%;transform:translateX(-50%);z-index:50;
+    width:100%;max-width:var(--shell-w);
+    display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;
+    padding:calc(14px + env(safe-area-inset-top)) 16px 12px;
+    transition:background .3s ease,box-shadow .3s ease;
+  }
+  header.scrolled{
+    --hi:var(--text); --hbg:rgba(128,128,128,.16);
+    background:rgba(var(--card-rgb),0.72);
     backdrop-filter:blur(16px) saturate(160%);
     -webkit-backdrop-filter:blur(16px) saturate(160%);
+    box-shadow:0 8px 24px -16px rgba(0,0,0,.35);
   }
-  .logo{font-size:26px;font-weight:800;letter-spacing:.3px;}
-  .logo-img{height:52px;width:auto;display:block;max-width:160px;object-fit:contain;}
-  .head-icons{display:flex;gap:10px;}
+  .head-right{display:flex;gap:8px;align-items:center;justify-self:start;}
+  .head-left{display:flex;gap:8px;align-items:center;justify-self:end;}
+  .logo{font-size:24px;font-weight:800;letter-spacing:.3px;color:var(--hi);text-align:center;text-shadow:0 1px 8px rgba(0,0,0,.25);}
+  header.scrolled .logo{text-shadow:none;}
+  .logo-img{height:44px;width:auto;display:block;max-width:130px;object-fit:contain;margin:0 auto;}
   .round-btn{
-    width:42px;height:42px;border-radius:50%;
-    background:rgba(var(--card-rgb),0.75);border:none;
+    width:42px;height:42px;border-radius:50%;border:none;padding:0;cursor:pointer;
+    background:var(--hbg);
     display:flex;align-items:center;justify-content:center;
-    box-shadow:var(--shadow);
-    backdrop-filter:blur(6px);
+    backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+    transition:background .2s,transform .2s;
   }
-  .round-btn svg{width:18px;height:18px;stroke:var(--text);}
-  .round-btn.active svg{stroke:var(--blue);}
+  .round-btn:hover{transform:scale(1.06);}
+  .round-btn svg{width:19px;height:19px;stroke:var(--hi);}
+  .login-btn{
+    height:42px;border-radius:21px;border:none;padding:0 14px;cursor:pointer;
+    display:flex;align-items:center;gap:7px;background:var(--hbg);color:var(--hi);
+    font-size:13px;font-weight:700;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+    max-width:120px;white-space:nowrap;
+  }
+  .login-btn span{overflow:hidden;text-overflow:ellipsis;}
+  .login-btn svg{width:18px;height:18px;stroke:var(--hi);flex:0 0 auto;}
+  /* Day / night pill */
+  .theme-pill{
+    width:60px;height:34px;border-radius:17px;border:none;padding:4px;cursor:pointer;flex:0 0 auto;
+    background:var(--hbg);display:flex;align-items:center;
+    backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  }
+  .theme-pill .knob{
+    width:26px;height:26px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;
+    transition:transform .32s cubic-bezier(.4,1.4,.5,1);box-shadow:0 2px 6px rgba(0,0,0,.3);
+  }
+  .theme-pill .knob svg{width:15px;height:15px;stroke:#1C1C1E;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;}
+  .theme-pill .moon{display:none;}
+  html[data-theme="dark"] .theme-pill .knob{transform:translateX(-26px);background:#1C1C1E;}
+  html[data-theme="dark"] .theme-pill .knob svg{stroke:#fff;}
+  html[data-theme="dark"] .theme-pill .sun{display:none;}
+  html[data-theme="dark"] .theme-pill .moon{display:block;}
+  @media (max-width:400px){
+    .login-btn{padding:0;width:42px;justify-content:center;} .login-btn span{display:none;}
+    .logo{font-size:20px;} .logo-img{height:36px;max-width:90px;}
+    header{padding-left:12px;padding-right:12px;gap:4px;}
+  }
 
-  /* ---- Hero slider (boxed, one slide at a time, auto-play + arrows + dots) ---- */
-  .hero-wrap{padding:16px 20px 6px;direction:ltr;}
-  .hero-box{position:relative;aspect-ratio:4/3;border-radius:28px;overflow:hidden;background:#222;box-shadow:var(--shadow);}
+  /* ---- Hero: full-bleed slider, tap to open the details page ---- */
+  .hero-wrap{
+    position:relative;height:clamp(440px,66vh,640px);overflow:hidden;direction:ltr;
+    border-radius:0 0 30px 30px;background:#222;touch-action:pan-y;
+  }
   .hero-track{display:flex;height:100%;transition:transform .7s cubic-bezier(.65,.05,.25,1);will-change:transform;}
-  .hero-slide{flex:0 0 100%;height:100%;position:relative;overflow:hidden;direction:rtl;display:flex;flex-direction:column;justify-content:space-between;padding:20px;}
+  .hero-slide{
+    flex:0 0 100%;height:100%;position:relative;overflow:hidden;direction:rtl;cursor:pointer;
+    display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
+    padding:0 24px 76px;outline:none;
+  }
   .hero-bg{
     position:absolute;inset:0;background:linear-gradient(155deg,var(--h1,#5FCFC0),var(--h2,#1E7E76));
     background-size:cover;background-position:center;transform:scale(1.12);
     transition:transform 6s ease-out;
   }
   .hero-slide.active .hero-bg{transform:scale(1);}
-  .hero-slide::after{content:'';position:absolute;inset:0;background:linear-gradient(0deg, rgba(0,0,0,.55), rgba(0,0,0,0) 60%);}
+  .hero-slide::after{
+    content:'';position:absolute;inset:0;pointer-events:none;
+    background:linear-gradient(180deg,rgba(0,0,0,.5) 0,rgba(0,0,0,0) 26%,rgba(0,0,0,0) 38%,rgba(0,0,0,.8) 100%);
+  }
   .hero-ico,.hero-cap{position:relative;z-index:1;}
-  .hero-ico{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.22);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;
-    opacity:0;transform:scale(.6);transition:opacity .5s ease .25s,transform .5s ease .25s;}
-  .hero-ico svg{width:21px;height:21px;stroke:#fff;}
-  .hero-cap{text-align:center;opacity:0;transform:translateY(14px);transition:opacity .55s ease .3s,transform .55s ease .3s;}
+  .hero-ico{
+    width:92px;height:92px;border-radius:50%;background:rgba(255,255,255,.2);backdrop-filter:blur(6px);
+    display:flex;align-items:center;justify-content:center;margin-bottom:22px;
+    opacity:0;transform:scale(.6);transition:opacity .5s ease .25s,transform .5s ease .25s;
+  }
+  .hero-ico svg{width:46px;height:46px;stroke:#fff;}
+  .hero-cap{text-align:center;opacity:0;transform:translateY(16px);transition:opacity .55s ease .3s,transform .55s ease .3s;max-width:760px;}
   .hero-slide.active .hero-ico{opacity:1;transform:scale(1);}
   .hero-slide.active .hero-cap{opacity:1;transform:none;}
-  .hero-label{color:#fff;font-size:24px;font-weight:800;}
-  .hero-sub{color:rgba(255,255,255,.85);font-size:13.5px;margin-top:4px;}
+  .hero-label{color:#fff;font-size:32px;font-weight:800;line-height:1.35;text-shadow:0 2px 14px rgba(0,0,0,.45);}
+  .hero-sub{color:rgba(255,255,255,.88);font-size:14.5px;margin-top:6px;line-height:1.8;}
+  .hero-more{
+    display:inline-flex;align-items:center;gap:6px;margin-top:14px;padding:8px 16px;border-radius:20px;
+    background:rgba(255,255,255,.2);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+    color:#fff;font-size:12.5px;font-weight:600;transition:background .2s;
+  }
+  .hero-slide:hover .hero-more{background:rgba(255,255,255,.34);}
+  .hero-more svg{width:13px;height:13px;stroke:#fff;fill:none;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;}
   .hero-arrow{
     position:absolute;top:50%;transform:translateY(-50%);z-index:3;
-    width:38px;height:38px;border-radius:50%;border:none;padding:0;cursor:pointer;
-    background:rgba(255,255,255,.35);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+    width:40px;height:40px;border-radius:50%;border:none;padding:0;cursor:pointer;
+    background:rgba(255,255,255,.28);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
     display:flex;align-items:center;justify-content:center;transition:background .2s,transform .2s;
   }
   .hero-arrow svg{width:18px;height:18px;stroke:#fff;}
-  .hero-arrow:active{transform:translateY(-50%) scale(.9);background:rgba(255,255,255,.55);}
+  .hero-arrow:hover{background:rgba(255,255,255,.5);}
+  .hero-arrow:active{transform:translateY(-50%) scale(.9);}
   .hero-arrow.prev{left:12px;} .hero-arrow.next{right:12px;}
-  .hero-dots{display:flex;justify-content:center;gap:8px;padding-top:12px;}
-  .hero-dots button{width:9px;height:9px;border-radius:50%;border:none;padding:0;background:rgba(138,138,142,.4);cursor:pointer;transition:width .35s ease,background .35s ease;}
-  .hero-dots button.on{width:24px;border-radius:6px;background:var(--blue);}
+  .hero-dots{position:absolute;left:0;right:0;bottom:28px;z-index:3;display:flex;justify-content:center;gap:9px;}
+  .hero-dots button{width:10px;height:10px;border-radius:50%;border:none;padding:0;background:rgba(255,255,255,.5);cursor:pointer;transition:width .35s ease,background .35s ease;}
+  .hero-dots button.on{width:30px;border-radius:6px;background:#fff;}
   .hero-wrap.single .hero-arrow,.hero-wrap.single .hero-dots{display:none;}
 
   /* ---- Stories row (static, swipe-to-scroll, Instagram-style) ---- */
@@ -491,31 +669,28 @@
 <body>
 <div class="shell">
 
-  <header>
-    <div class="head-icons">
+  <header id="siteHeader">
+    <div class="head-right">
       <button class="round-btn" id="openMenu" aria-label="منو">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
       </button>
-      <button class="round-btn active" id="themeToggle" aria-label="حالت شب">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg>
-      </button>
-      <button class="round-btn" id="shareBtn" aria-label="اشتراک‌گذاری">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="18" cy="5" r="2.6"/><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/><line x1="8.3" y1="10.7" x2="15.7" y2="6.3"/><line x1="8.3" y1="13.3" x2="15.7" y2="17.7"/></svg>
-      </button>
+      <button class="login-btn" id="loginBtn" aria-label="ورود"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg><span id="loginBtnLabel">ورود</span></button>
     </div>
     <div class="logo" id="logoWrap">
       <span id="logoText">پرشین</span>
       <img id="logoImg" class="logo-img" alt="پرشین" style="display:none;">
     </div>
+    <div class="head-left">
+      <button class="round-btn" id="shareBtn" aria-label="اشتراک‌گذاری"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="18" cy="5" r="2.6"/><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/><line x1="8.3" y1="10.7" x2="15.7" y2="6.3"/><line x1="8.3" y1="13.3" x2="15.7" y2="17.7"/></svg></button>
+      <button class="theme-pill" id="themeToggle" aria-label="تغییر حالت شب و روز"><span class="knob"><svg class="sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><svg class="moon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg></span></button>
+    </div>
   </header>
 
-  <!-- Hero slider: one boxed slide at a time. Auto-plays, arrows + dots + swipe. -->
+  <!-- Hero: full-bleed slider. Tap a slide to open its details page. -->
   <div class="hero-wrap" id="heroWrap">
-    <div class="hero-box">
-      <div class="hero-track" id="heroTrack"></div>
-      <button type="button" class="hero-arrow prev" id="heroPrev" aria-label="قبلی"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
-      <button type="button" class="hero-arrow next" id="heroNext" aria-label="بعدی"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>
-    </div>
+    <div class="hero-track" id="heroTrack"></div>
+    <button type="button" class="hero-arrow prev" id="heroPrev" aria-label="قبلی"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <button type="button" class="hero-arrow next" id="heroNext" aria-label="بعدی"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>
     <div class="hero-dots" id="heroDots"></div>
   </div>
 
@@ -672,6 +847,12 @@
         جاکلیدی<svg class="chev" viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M14 6l-6 6 6 6"/></svg>
       </a>
 
+      <div class="menu-group-title">حساب کاربری</div>
+      <a href="#" class="menu-row" id="menuLogin">
+        <div class="menu-ico" style="background:#e1306c;"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg></div>
+        <span id="menuLoginLabel">ورود به حساب</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M14 6l-6 6 6 6"/></svg>
+      </a>
+
       <div class="menu-group-title">تنظیمات</div>
       <div class="menu-row" style="cursor:pointer;" id="menuDarkRow">
         <div class="menu-ico" style="background:#3A3A3C;"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg></div>
@@ -807,6 +988,75 @@
     <input class="story-input" id="storyInput" type="text" placeholder="نظرت رو بنویس..." enterkeyhint="send" autocomplete="off" maxlength="300">
     <button type="button" class="story-act" id="storyLike" aria-label="لایک"><svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.3 3 4.5 6.6 4.5c2 0 3.5 1 5.4 3 1.9-2 3.4-3 5.4-3 3.6 0 5.7 3.800 4.200 7.300C19.500 16.400 12 21 12 21z"/></svg></button>
     <button type="button" class="story-act" id="storySend" aria-label="ارسال"><svg viewBox="0 0 24 24"><path d="M21 3L10 14M21 3l-7 18-4-7-7-4 18-7z"/></svg></button>
+  </div>
+</div>
+
+<!-- Details page -->
+<div class="detail" id="detail" aria-hidden="true">
+  <div class="detail-bar" id="detailBar">
+    <button class="round-btn" id="dBack" aria-label="بازگشت"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>
+    <div class="bar-title" id="dBarTitle"></div>
+    <div class="head-left">
+      <button class="round-btn" id="dShare" aria-label="اشتراک‌گذاری"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="18" cy="5" r="2.6"/><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/><line x1="8.3" y1="10.7" x2="15.7" y2="6.3"/><line x1="8.3" y1="13.3" x2="15.7" y2="17.7"/></svg></button>
+      <button class="theme-pill" id="dTheme" aria-label="تغییر حالت شب و روز"><span class="knob"><svg class="sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><svg class="moon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg></span></button>
+    </div>
+  </div>
+  <div class="detail-hero" id="detailHero">
+    <div class="detail-bg" id="detailBg"></div>
+    <div class="detail-wrap">
+      <div class="detail-top">
+        <div class="detail-poster" id="detailPoster"></div>
+        <div class="detail-info">
+          <h1 id="dTitle"></h1>
+          <p class="d-sub" id="dSub"></p>
+          <div class="d-chips" id="dChips"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="detail-body">
+    <div class="d-actions">
+      <button type="button" class="d-btn" id="dProducts"><svg viewBox="0 0 24 24"><path d="M6 7h12l-1 12H7L6 7z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg>مشاهده محصولات</button>
+      <button type="button" class="d-btn solid" id="dWhats" style="display:none;"><svg viewBox="0 0 24 24"><path d="M21 12a8.5 8.5 0 0 1-12.6 7.4L3 21l1.6-5.2A8.5 8.5 0 1 1 21 12z"/></svg>پرسش از فروشگاه</button>
+    </div>
+    <div class="d-tabs" id="dTabs">
+      <button class="d-tab on" data-pane="about">درباره</button>
+      <button class="d-tab" data-pane="brands" id="dTabBrands" style="display:none;">برندها</button>
+      <button class="d-tab" data-pane="comments">نظرات</button>
+    </div>
+    <div class="d-pane on" id="pane-about"><h3 id="dAboutTitle"></h3><p class="d-text" id="dDesc"></p></div>
+    <div class="d-pane" id="pane-brands"><h3>برندهای این بخش</h3><div class="d-brands" id="dBrandsList"></div></div>
+    <div class="d-pane" id="pane-comments">
+      <h3>نظرت رو بنویس</h3>
+      <p class="d-note">نظرت مستقیم برای مدیر فروشگاه ارسال می‌شه و عمومی نمایش داده نمی‌شه.</p>
+      <input class="d-input" id="dCmtName" type="text" placeholder="اسمت (اختیاری)" maxlength="60">
+      <textarea class="d-input" id="dCmtText" placeholder="نظر یا سوالت..." maxlength="600"></textarea>
+      <button type="button" class="d-btn solid" id="dCmtSend" style="width:100%;flex:none;">ارسال نظر</button>
+      <p class="d-status" id="dCmtStatus"></p>
+    </div>
+  </div>
+</div>
+
+<!-- Login sheet -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-scrim" id="loginScrim"></div>
+  <div class="login-card" role="dialog" aria-modal="true">
+    <button class="l-close" id="loginClose" aria-label="بستن"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <div id="loginFormView">
+      <h3>ورود به پرشین</h3>
+      <p class="l-sub">اسم و شماره‌ت رو بنویس تا سفارش و نظرهات سریع‌تر پر بشن.</p>
+      <input class="d-input" id="loginName" type="text" placeholder="نام و نام خانوادگی" maxlength="60" autocomplete="name">
+      <input class="d-input" id="loginPhone" type="tel" inputmode="numeric" placeholder="شماره موبایل (۰۹۱۲...)" maxlength="11" autocomplete="tel" dir="ltr" style="text-align:right;">
+      <p class="d-note">اطلاعاتت فقط روی همین دستگاه ذخیره می‌شه.</p>
+      <button type="button" class="d-btn solid" id="loginSubmit">ورود</button>
+      <p class="d-status" id="loginStatus"></p>
+    </div>
+    <div id="loginUserView" style="display:none;">
+      <div class="l-avatar" id="loginAvatar"></div>
+      <h3 id="loginHello"></h3>
+      <p class="l-sub" id="loginPhoneShow" dir="ltr"></p>
+      <button type="button" class="d-btn l-out" id="loginLogout">خروج از حساب</button>
+    </div>
   </div>
 </div>
 
@@ -1140,6 +1390,7 @@
   storySendBtn.addEventListener('click', sendStoryComment);
   storyInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); sendStoryComment(); } });
 
+
   function escapeHtml(str){
     return String(str || '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   }
@@ -1239,6 +1490,7 @@
       return;
     }
     let msg = 'سلام، می‌خوام این سفارش رو ثبت کنم:\n\n';
+    const _u = getUser(); if (_u) msg = 'سلام، من ' + _u.name + ' هستم (' + _u.phone + ').\nمی‌خوام این سفارش رو ثبت کنم:\n\n';
     cart.forEach(item => { msg += `- ${item.title} × ${item.qty} = ${formatToman(item.price * item.qty)}\n`; });
     msg += `\nجمع کل: ${formatToman(cartTotal())}`;
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
@@ -1300,23 +1552,24 @@
   const heroWrap = document.getElementById('heroWrap');
   const heroDots = document.getElementById('heroDots');
   const heroSlides = [
-    { label:'بدلیجات', h1:'#F4C452', h2:'#C98A1E', icon:'<svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.3" fill="#fff" stroke="none"/></svg>' },
-    { label:'کش و کلیپس', h1:'#C782D9', h2:'#6E3E9C', icon:'<svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><path d="M4 12c3-4 6-4 8 0s5 4 8 0"/></svg>' },
-    { label:'عینک آفتابی', h1:'#5FCFC0', h2:'#1E7E76', icon:'<svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><circle cx="7" cy="13" r="3.2"/><circle cx="17" cy="13" r="3.2"/><path d="M10.2 13h3.6M3.6 13l1.5-5h13.8l1.5 5"/></svg>' },
-    { label:'جاکلیدی', h1:'#E7727E', h2:'#8C2E3D', icon:'<svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><circle cx="8" cy="8" r="3.8"/><path d="M10.7 10.7l8.3 8.3M15.4 15.4l1.8-1.8M17.9 17.9l1.8-1.8"/></svg>' },
-    { label:'ارسال ویژه', h1:'#6E93F0', h2:'#2E4CA8', icon:'<svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><path d="M3 12h13l4 4M3 12l4-4M3 12l4 4"/></svg>' }
+    { label:'بدلیجات', sub:'گردنبند، دستبند، گوشواره و انگشتر', desc:'مجموعه‌ای از بدلیجات شیک و روزمره؛ گردنبند، دستبند، گوشواره و انگشتر در طرح‌های متنوع.\n\nبرای ست کردن با لباس‌های روزمره، مهمانی و هدیه دادن.', h1:'#F4C452', h2:'#C98A1E', icon:'<svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.3" fill="#fff" stroke="none"/></svg>' },
+    { label:'کش و کلیپس', sub:'اکسسوری مو در رنگ‌ها و مدل‌های مختلف', desc:'انواع کش مو، کلیپس و گیره در رنگ‌ها و مدل‌های مختلف.\n\nهم برای استفاده روزمره، هم برای ست کردن با لباس‌های خاص.', h1:'#C782D9', h2:'#6E3E9C', icon:'<svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><path d="M4 12c3-4 6-4 8 0s5 4 8 0"/></svg>' },
+    { label:'عینک آفتابی', sub:'طرح‌های کلاسیک و مدرن', desc:'عینک‌های آفتابی در طرح‌های کلاسیک و مدرن برای استایل‌های مختلف.\n\nقبل از خرید برای اطلاع از مدل‌ها و موجودی از فروشگاه بپرس.', h1:'#5FCFC0', h2:'#1E7E76', icon:'<svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><circle cx="7" cy="13" r="3.2"/><circle cx="17" cy="13" r="3.2"/><path d="M10.2 13h3.6M3.6 13l1.5-5h13.8l1.5 5"/></svg>' },
+    { label:'جاکلیدی', sub:'خاص، کاربردی و مناسب هدیه', desc:'جاکلیدی‌های خاص و کاربردی؛ هم برای استفاده شخصی و هم برای هدیه دادن.', h1:'#E7727E', h2:'#8C2E3D', icon:'<svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><circle cx="8" cy="8" r="3.8"/><path d="M10.7 10.7l8.3 8.3M15.4 15.4l1.8-1.8M17.9 17.9l1.8-1.8"/></svg>' },
+    { label:'ارسال ویژه', sub:'ثبت سفارش از طریق واتساپ', desc:'سفارش‌ها از طریق واتساپ ثبت می‌شن و هماهنگی ارسال با فروشگاه انجام می‌شه.\n\nبرای اطلاع از شرایط ارسال، از دکمه «پرسش از فروشگاه» استفاده کن.', h1:'#6E93F0', h2:'#2E4CA8', icon:'<svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><path d="M3 12h13l4 4M3 12l4-4M3 12l4 4"/></svg>' }
   ];
   const HERO_DELAY = 4500;
   let heroList = [], heroIndex = 0, heroTimer = null, heroHold = false;
 
   function heroSlideHTML(s){
     const bg = s.image ? `background-image:url('${encodeURI(s.image)}');` : `--h1:${s.h1 || '#5FCFC0'};--h2:${s.h2 || '#1E7E76'};`;
-    return `<div class="hero-slide">
+    return `<div class="hero-slide" role="button" tabindex="0" aria-label="${escapeHtml(s.label || '')}">
       <div class="hero-bg" style="${bg}"></div>
-      <div class="hero-ico">${s.icon || ''}</div>
+      ${s.icon ? `<div class="hero-ico">${s.icon}</div>` : ''}
       <div class="hero-cap">
         <div class="hero-label">${escapeHtml(s.label || '')}</div>
         ${s.sub ? `<div class="hero-sub">${escapeHtml(s.sub)}</div>` : ''}
+        <div class="hero-more">مشاهده جزئیات <svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></div>
       </div>
     </div>`;
   }
@@ -1341,6 +1594,182 @@
     heroGo(0);
     heroStart();
   }
+
+  /* ---- Header: frosted once the page is scrolled ---- */
+  const siteHeader = document.getElementById('siteHeader');
+  function syncHeader(){ siteHeader.classList.toggle('scrolled', window.scrollY > 40); }
+  window.addEventListener('scroll', syncHeader, {passive:true}); syncHeader();
+
+  /* ---- Theme: remembered between visits ---- */
+  try { const t = localStorage.getItem('persianTheme'); if (t) setTheme(t === 'dark'); } catch(e){}
+  document.getElementById('themeToggle').addEventListener('click', () => {
+    try { localStorage.setItem('persianTheme', root.getAttribute('data-theme')); } catch(e){}
+  });
+
+  /* ---- Login (device-only: remembers name + phone on this browser) ---- */
+  const loginOverlay = document.getElementById('loginOverlay');
+  const toEnDigits = v => String(v || '').replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
+  function getUser(){ try { return JSON.parse(localStorage.getItem('persianUser') || 'null'); } catch(e){ return null; } }
+  function setUser(u){ try { if (u) localStorage.setItem('persianUser', JSON.stringify(u)); else localStorage.removeItem('persianUser'); } catch(e){} }
+  function applyUserUI(){
+    const u = getUser();
+    const first = u ? (u.name.split(' ')[0] || u.name) : '';
+    document.getElementById('loginBtnLabel').textContent = u ? first : 'ورود';
+    document.getElementById('menuLoginLabel').textContent = u ? ('حساب ' + first) : 'ورود به حساب';
+    const n = document.getElementById('commentName'); if (n && u && !n.value) n.value = u.name;
+    const dn = document.getElementById('dCmtName'); if (dn && u && !dn.value) dn.value = u.name;
+  }
+  function openLogin(){
+    const u = getUser();
+    document.getElementById('loginFormView').style.display = u ? 'none' : '';
+    document.getElementById('loginUserView').style.display = u ? '' : 'none';
+    if (u) {
+      document.getElementById('loginAvatar').textContent = u.name.trim().charAt(0);
+      document.getElementById('loginHello').textContent = 'سلام ' + u.name;
+      document.getElementById('loginPhoneShow').textContent = u.phone;
+    }
+    document.getElementById('loginStatus').textContent = '';
+    closeMenuFn();
+    loginOverlay.classList.add('open');
+  }
+  function closeLogin(){ loginOverlay.classList.remove('open'); }
+  document.getElementById('loginBtn').addEventListener('click', openLogin);
+  document.getElementById('menuLogin').addEventListener('click', e => { e.preventDefault(); openLogin(); });
+  document.getElementById('loginClose').addEventListener('click', closeLogin);
+  document.getElementById('loginScrim').addEventListener('click', closeLogin);
+  function submitLogin(){
+    const name = document.getElementById('loginName').value.trim();
+    const phone = toEnDigits(document.getElementById('loginPhone').value).replace(/\s/g, '');
+    const st = document.getElementById('loginStatus');
+    if (name.length < 2) { st.textContent = 'اسمت رو وارد کن.'; return; }
+    if (!/^09\d{9}$/.test(phone)) { st.textContent = 'شماره موبایل درست نیست (مثلاً ۰۹۱۲۳۴۵۶۷۸۹).'; return; }
+    setUser({ name, phone });
+    applyUserUI(); closeLogin();
+  }
+  document.getElementById('loginSubmit').addEventListener('click', submitLogin);
+  ['loginName','loginPhone'].forEach(id => document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') submitLogin(); }));
+  document.getElementById('loginLogout').addEventListener('click', () => { setUser(null); applyUserUI(); closeLogin(); });
+  applyUserUI();
+
+  /* ---- Details page ---- */
+  const detail = document.getElementById('detail');
+  const detailBar = document.getElementById('detailBar');
+  let detailOpen = false, detailSlide = null;
+  function parseBrands(b){
+    if (Array.isArray(b)) return b.map(x => String(x).trim()).filter(Boolean);
+    if (typeof b === 'string') return b.split(/[,،\n]/).map(x => x.trim()).filter(Boolean);
+    return [];
+  }
+  function setPane(name){
+    document.querySelectorAll('.d-tab').forEach(t => t.classList.toggle('on', t.dataset.pane === name));
+    document.querySelectorAll('.d-pane').forEach(p => p.classList.toggle('on', p.id === 'pane-' + name));
+  }
+  document.getElementById('dTabs').addEventListener('click', e => { const t = e.target.closest('.d-tab'); if (t) setPane(t.dataset.pane); });
+  function openDetail(i){
+    const sl = heroList[i]; if (!sl) return;
+    detailSlide = sl;
+    const colors = `--h1:${sl.h1 || '#5FCFC0'};--h2:${sl.h2 || '#1E7E76'};`;
+    const img = sl.image ? `background-image:url('${encodeURI(sl.image)}');` : '';
+    detail.style.cssText = colors;
+    document.getElementById('detailBg').style.cssText = img;
+    const poster = document.getElementById('detailPoster');
+    poster.style.cssText = img;
+    poster.innerHTML = sl.image ? '' : (sl.icon || '');
+    document.getElementById('dTitle').textContent = sl.label || '';
+    document.getElementById('dBarTitle').textContent = sl.label || '';
+    const sub = document.getElementById('dSub'); sub.textContent = sl.sub || ''; sub.style.display = sl.sub ? '' : 'none';
+    const brands = parseBrands(sl.brands);
+    const chips = document.getElementById('dChips');
+    chips.innerHTML = brands.slice(0, 3).map(b => `<span class="d-chip">${escapeHtml(b)}</span>`).join('') + (brands.length > 3 ? `<span class="d-chip">+${brands.length - 3}</span>` : '');
+    document.getElementById('dAboutTitle').textContent = 'درباره ' + (sl.label || '');
+    document.getElementById('dDesc').textContent = sl.desc || 'برای اطلاعات بیشتر درباره این بخش از فروشگاه بپرس.';
+    document.getElementById('dTabBrands').style.display = brands.length ? '' : 'none';
+    document.getElementById('dBrandsList').innerHTML = brands.map(b => `<div class="d-brand"><i>${escapeHtml(b.charAt(0).toUpperCase())}</i><b>${escapeHtml(b)}</b></div>`).join('');
+    document.getElementById('dWhats').style.display = (typeof shopWhatsapp !== 'undefined' && shopWhatsapp) ? '' : 'none';
+    document.getElementById('dCmtStatus').textContent = '';
+    setPane('about');
+    detail.scrollTop = 0; detailBar.classList.remove('scrolled');
+    detail.classList.add('open'); detail.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+    heroHold = true;
+    if (!(history.state && history.state.detail)) { try { history.pushState({ detail: 1 }, ''); } catch(e){} }
+    detailOpen = true;
+  }
+  function closeDetail(fromPop){
+    if (!detailOpen) return;
+    detailOpen = false;
+    detail.classList.remove('open'); detail.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+    heroHold = false;
+    if (!fromPop && history.state && history.state.detail) { try { history.back(); } catch(e){} }
+  }
+  window.addEventListener('popstate', () => { if (detailOpen) closeDetail(true); });
+  detail.addEventListener('scroll', () => detailBar.classList.toggle('scrolled', detail.scrollTop > 60), {passive:true});
+  document.getElementById('dBack').addEventListener('click', () => closeDetail());
+  document.getElementById('dTheme').addEventListener('click', () => {
+    toggleTheme();
+    try { localStorage.setItem('persianTheme', root.getAttribute('data-theme')); } catch(e){}
+  });
+  document.getElementById('dShare').addEventListener('click', async () => {
+    const data = { title: (detailSlide && detailSlide.label) || 'پرشین', text: 'این بخش از پرشین رو ببین', url: location.href };
+    if (navigator.share) { try { await navigator.share(data); } catch(e){} }
+    else if (navigator.clipboard) { try { await navigator.clipboard.writeText(location.href); alert('لینک کپی شد.'); } catch(e){ alert(location.href); } }
+    else alert(location.href);
+  });
+  document.getElementById('dProducts').addEventListener('click', () => {
+    closeDetail();
+    const t = ['liveProductsSection', 'liveShowcaseSection'].map(id => document.getElementById(id)).find(el => el && el.style.display !== 'none')
+              || document.getElementById('storiesTrack').nextElementSibling;
+    setTimeout(() => { if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 120);
+  });
+  document.getElementById('dWhats').addEventListener('click', () => {
+    const phone = String(shopWhatsapp || '').replace(/[^0-9]/g, '');
+    if (!phone) return;
+    const msg = 'سلام، درباره «' + ((detailSlide && detailSlide.label) || '') + '» سوال داشتم.';
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+  });
+  document.getElementById('dCmtSend').addEventListener('click', async () => {
+    const st = document.getElementById('dCmtStatus');
+    const text = document.getElementById('dCmtText').value.trim();
+    const name = document.getElementById('dCmtName').value.trim() || 'بازدیدکننده سایت';
+    if (!text) { st.textContent = 'اول نظرت رو بنویس.'; return; }
+    if (!commentsKey) { st.textContent = 'فعلاً ارسال نظر فعال نشده.'; return; }
+    const btn = document.getElementById('dCmtSend'); btn.disabled = true; st.textContent = 'در حال ارسال...';
+    try {
+      const u = getUser();
+      const res = await fetch('https://api.web3forms.com/submit', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          access_key: commentsKey,
+          subject: 'نظر درباره «' + ((detailSlide && detailSlide.label) || '') + '»',
+          name, message: text + (u ? '\n\nشماره: ' + u.phone : '')
+        })
+      });
+      if (res.ok) { document.getElementById('dCmtText').value = ''; st.textContent = 'نظرت ارسال شد. ممنون 🙏'; }
+      else st.textContent = 'ارسال نشد، دوباره امتحان کن.';
+    } catch(e) { st.textContent = 'اتصال اینترنت رو چک کن.'; }
+    btn.disabled = false;
+  });
+
+  // Open the details page from a hero slide (click / Enter / Space)
+  heroTrack.addEventListener('click', () => { if (!heroSwiped) openDetail(heroIndex); });
+  heroTrack.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDetail(heroIndex); } });
+
+  // Keyboard (desktop): Esc closes things, ← / → move the hero
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      if (loginOverlay.classList.contains('open')) closeLogin();
+      else if (detailOpen) closeDetail();
+      else closeMenuFn();
+      return;
+    }
+    const tag = (document.activeElement && document.activeElement.tagName) || '';
+    if (/INPUT|TEXTAREA|SELECT/.test(tag) || detailOpen || loginOverlay.classList.contains('open')) return;
+    if (document.getElementById('storyViewer') && document.getElementById('storyViewer').classList.contains('open')) return;
+    if (e.key === 'ArrowLeft') { heroGo(heroIndex - 1); heroStart(); }
+    else if (e.key === 'ArrowRight') { heroGo(heroIndex + 1); heroStart(); }
+  });
+
   // Slider is LTR even on the RTL page: left arrow = previous, right arrow = next
   document.getElementById('heroPrev').addEventListener('click', () => { heroGo(heroIndex - 1); heroStart(); });
   document.getElementById('heroNext').addEventListener('click', () => { heroGo(heroIndex + 1); heroStart(); });
@@ -1348,7 +1777,9 @@
   let heroX0 = null, heroDX = 0;
   heroWrap.addEventListener('touchstart', e => { heroHold = true; clearTimeout(window._heroRel); window._heroRel = setTimeout(() => { heroHold = false; }, 6000); heroX0 = e.touches[0].clientX; heroDX = 0; }, {passive:true});
   heroWrap.addEventListener('touchmove', e => { if (heroX0 !== null) heroDX = e.touches[0].clientX - heroX0; }, {passive:true});
+  let heroSwiped = false;
   heroWrap.addEventListener('touchend', () => {
+    heroSwiped = Math.abs(heroDX) > 12; setTimeout(() => { heroSwiped = false; }, 350);
     if (Math.abs(heroDX) > 40) { heroGo(heroIndex + (heroDX < 0 ? 1 : -1)); heroStart(); }
     heroX0 = null; heroHold = false;
   });

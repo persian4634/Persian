@@ -752,6 +752,16 @@
     wrap.style.marginTop = '12px';
     wrap.dataset.existingImage = (existing && existing.image) || '';
     wrap.dataset.existingExpiry = (existing && existing.expiresAt) || '';
+    const esc = v => String(v == null ? '' : v).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+    const brandsVal = existing ? (Array.isArray(existing.brands) ? existing.brands.join('، ') : (existing.brands || '')) : '';
+    const detailHtml = hasExpiry ? '' : `
+      <label>زیرعنوان (زیر متن روی عکس، اختیاری)</label>
+      <input type="text" class="slide-sub" value="${esc(existing && existing.sub)}" placeholder="مثلاً: گردنبند، دستبند و گوشواره">
+      <label>توضیحات صفحه جزئیات (با کلیک روی کارت باز می‌شه)</label>
+      <textarea class="slide-desc" rows="4" placeholder="درباره این بخش بنویس...">${esc(existing && existing.desc)}</textarea>
+      <label>برندها (با ویرگول جدا کن، اختیاری)</label>
+      <input type="text" class="slide-brands" value="${esc(brandsVal)}" placeholder="مثلاً: Pandora، Swarovski">
+    `;
     const expiryHtml = !hasExpiry ? '' : `
       <label>مدت نمایش استوری</label>
       <select class="slide-expiry">
@@ -770,6 +780,7 @@
       <label>عکس ${existing && existing.image ? '(اگه عکس جدید انتخاب نکنید، همین عکس فعلی می‌مونه)' : ''}</label>
       <input type="file" class="slide-file" accept="image/*">
       ${existing && existing.image ? `<img class="thumb" style="display:block;" src="${existing.image.startsWith('http') ? existing.image : ('https://raw.githubusercontent.com/' + els.owner.value.trim() + '/' + els.repo.value.trim() + '/' + els.branch.value.trim() + '/' + existing.image)}">` : ''}
+      ${detailHtml}
       ${expiryHtml}
       <div class="check"><input type="checkbox" class="slide-remove"><label style="margin:0;color:var(--muted);font-weight:400;">حذف این ${rowLabel === 'استوری' ? 'استوری' : 'کارت'}</label></div>
     `;
@@ -847,6 +858,12 @@
           if (!image && !label) continue; // fully empty row, skip
 
           const slide = { label, image };
+          if (!hasExpiry) {
+            const subEl = row.querySelector('.slide-sub'), descEl = row.querySelector('.slide-desc'), brEl = row.querySelector('.slide-brands');
+            if (subEl && subEl.value.trim()) slide.sub = subEl.value.trim();
+            if (descEl && descEl.value.trim()) slide.desc = descEl.value.trim();
+            if (brEl && brEl.value.trim()) slide.brands = brEl.value.split(/[,،\n]/).map(x => x.trim()).filter(Boolean);
+          }
           if (hasExpiry) {
             const expirySel = row.querySelector('.slide-expiry') ? row.querySelector('.slide-expiry').value : '';
             const existingExpiry = row.dataset.existingExpiry ? Number(row.dataset.existingExpiry) : null;
