@@ -143,6 +143,16 @@
       <div class="status" id="commentsKeyStatus"></div>
     </div>
     <div class="card">
+      <h2>ورود با گوگل (اختیاری)</h2>
+      <p class="help">
+        اگه می‌خوای مشتری‌ها با یه کلیک با حساب گوگل وارد بشن، یه «Client ID» رایگان از Google Cloud Console بگیر (APIs &amp; Services ← Credentials ← OAuth client ID ← Web application) و آدرس سایتت رو توی «Authorized JavaScript origins» بنویس. بعد Client ID رو اینجا بچسبون.<br>
+        تا وقتی خالی باشه، فقط ورود با اسم و شماره نشون داده می‌شه.
+      </p>
+      <input type="text" id="googleClientIdInput" placeholder="xxxxxxxx.apps.googleusercontent.com" dir="ltr">
+      <button class="btn btn-primary" id="saveGoogleClientBtn">ذخیره Client ID</button>
+      <div class="status" id="googleClientStatus"></div>
+    </div>
+    <div class="card">
       <h2>شماره واتساپ فروشگاه</h2>
       <p class="help">سفارش‌هایی که از سبد خرید تکمیل می‌شن، به این شماره تو واتساپ ارسال می‌شن. شماره رو با کد کشور و بدون صفر اول بنویسید (مثلاً برای 0912xxxxxxx بنویسید 98912xxxxxxx).</p>
       <input type="text" id="whatsappNumber" placeholder="مثلاً: 989121234567">
@@ -731,6 +741,20 @@
       setStatus('commentsKeyStatus', 'ok', 'کلید ذخیره شد 🎉 فرم نظرات فعال شد.');
     } catch (e) {
       setStatus('commentsKeyStatus', 'err', 'خطا: ' + errMsg(e));
+    }
+  });
+
+  document.getElementById('saveGoogleClientBtn').addEventListener('click', async () => {
+    try {
+      validateCfg();
+      persistCfgIfNeeded();
+      const id = document.getElementById('googleClientIdInput').value.trim();
+      if (id && !/\.apps\.googleusercontent\.com$/.test(id)) { setStatus('googleClientStatus', 'err', 'فرمت Client ID درست نیست (باید با .apps.googleusercontent.com تموم بشه).'); return; }
+      setStatus('googleClientStatus', 'busy', 'در حال ذخیره تنظیمات...');
+      await saveConfigPatch({ googleClientId: id });
+      setStatus('googleClientStatus', 'ok', id ? 'ذخیره شد 🎉 دکمه ورود با گوگل فعال شد.' : 'پاک شد؛ ورود با گوگل غیرفعاله.');
+    } catch (e) {
+      setStatus('googleClientStatus', 'err', 'خطا: ' + errMsg(e));
     }
   });
 

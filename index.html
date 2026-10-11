@@ -158,7 +158,7 @@
   .head-left{display:flex;gap:8px;align-items:center;justify-self:end;}
   .logo{font-size:28px;font-weight:800;letter-spacing:.3px;color:var(--hi);text-align:center;text-shadow:0 1px 8px rgba(0,0,0,.25);}
   header.scrolled .logo{text-shadow:none;}
-  .logo-img{height:58px;width:auto;display:block;max-width:150px;object-fit:contain;margin:0 auto;}
+  .logo-img{height:52px;width:auto;display:block;max-width:125px;object-fit:contain;margin:0 auto;}
   .round-btn{
     width:42px;height:42px;border-radius:50%;border:none;padding:0;cursor:pointer;
     background:var(--hbg);
@@ -194,9 +194,10 @@
   html[data-theme="dark"] .theme-pill .moon{display:block;}
   @media (max-width:400px){
     .login-btn{padding:0;width:42px;justify-content:center;} .login-btn span{display:none;}
-    .logo{font-size:24px;} .logo-img{height:48px;max-width:105px;}
+    .logo{font-size:24px;} .logo-img{height:51px;max-width:124px;}
     header{padding-left:12px;padding-right:12px;gap:4px;}
   }
+  @media (max-width:370px){ .logo-img{height:44px;max-width:100px;} }
 
   /* ---- Hero: full-bleed slider, tap to open the details page ---- */
   .hero-wrap{
@@ -644,6 +645,9 @@
   .modal-card .eyebrow{margin-bottom:4px;}
   .modal-card h3{font-size:22px;font-weight:800;margin:0;}
   .modal-card p{font-size:13.5px;line-height:1.9;color:var(--muted);margin:0;}
+  .l-or{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:12px;margin:14px 0;}
+  .l-or::before,.l-or::after{content:'';flex:1;height:1px;background:rgba(128,128,128,.25);}
+  .l-avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;}
   /* ---- Desktop ---- */
   @media (min-width:900px){
     :root{--shell-w:1100px;}
@@ -653,7 +657,7 @@
     .hero-arrow{width:50px;height:50px;} .hero-arrow svg{width:22px;height:22px;}
     .hero-arrow.prev{left:28px;} .hero-arrow.next{right:28px;}
     header{padding-left:28px;padding-right:28px;}
-    .logo{font-size:34px;} .logo-img{height:72px;max-width:240px;}
+    .logo{font-size:34px;} .logo-img{height:66px;max-width:160px;}
     .shell > :not(header):not(.hero-wrap){max-width:720px;margin-left:auto;margin-right:auto;}
     .bottom-nav{max-width:520px;border-radius:22px 22px 0 0;}
     .detail-info h1{font-size:42px;}
@@ -1045,6 +1049,10 @@
     <div id="loginFormView">
       <h3>ورود به پرشین</h3>
       <p class="l-sub">اسم و شماره‌ت رو بنویس تا سفارش و نظرهات سریع‌تر پر بشن.</p>
+      <div id="googleWrap" style="display:none;">
+        <div id="googleBtn" style="display:flex;justify-content:center;min-height:44px;"></div>
+        <div class="l-or">یا</div>
+      </div>
       <input class="d-input" id="loginName" type="text" placeholder="نام و نام خانوادگی" maxlength="60" autocomplete="name">
       <input class="d-input" id="loginPhone" type="tel" inputmode="numeric" placeholder="شماره موبایل (۰۹۱۲...)" maxlength="11" autocomplete="tel" dir="ltr" style="text-align:right;">
       <p class="d-note">اطلاعاتت فقط روی همین دستگاه ذخیره می‌شه.</p>
@@ -1490,7 +1498,7 @@
       return;
     }
     let msg = 'سلام، می‌خوام این سفارش رو ثبت کنم:\n\n';
-    const _u = getUser(); if (_u) msg = 'سلام، من ' + _u.name + ' هستم (' + _u.phone + ').\nمی‌خوام این سفارش رو ثبت کنم:\n\n';
+    const _u = getUser(); if (_u) msg = 'سلام، من ' + _u.name + (_u.phone ? ' هستم (' + _u.phone + ').' : ' هستم.') + '\nمی‌خوام این سفارش رو ثبت کنم:\n\n';
     cart.forEach(item => { msg += `- ${item.title} × ${item.qty} = ${formatToman(item.price * item.qty)}\n`; });
     msg += `\nجمع کل: ${formatToman(cartTotal())}`;
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
@@ -1609,6 +1617,38 @@
   /* ---- Login (device-only: remembers name + phone on this browser) ---- */
   const loginOverlay = document.getElementById('loginOverlay');
   const toEnDigits = v => String(v || '').replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
+  let googleClientId = '', googleLoading = false, googleInited = false;
+  function b64urlToUtf8(b){
+    b = b.replace(/-/g, '+').replace(/_/g, '/'); while (b.length % 4) b += '=';
+    const bin = atob(b); const bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
+    return new TextDecoder('utf-8').decode(bytes);
+  }
+  function handleGoogleCredential(resp){
+    try {
+      const pl = JSON.parse(b64urlToUtf8(String(resp.credential).split('.')[1]));
+      const name = pl.name || (pl.email || '').split('@')[0] || 'کاربر';
+      setUser({ name, email: pl.email || '', picture: pl.picture || '', provider: 'google', phone: '' });
+      applyUserUI(); closeLogin();
+    } catch(e) { document.getElementById('loginStatus').textContent = 'ورود با گوگل انجام نشد، دوباره امتحان کن.'; }
+  }
+  function initGoogle(){
+    if (!googleClientId || googleInited) return;
+    const show = () => {
+      if (!(window.google && google.accounts && google.accounts.id)) return;
+      googleInited = true;
+      google.accounts.id.initialize({ client_id: googleClientId, callback: handleGoogleCredential, ux_mode: 'popup' });
+      google.accounts.id.renderButton(document.getElementById('googleBtn'), { type:'standard', theme:'outline', size:'large', shape:'pill', text:'continue_with', locale:'fa', width:300 });
+      document.getElementById('googleWrap').style.display = '';
+    };
+    if (window.google && google.accounts && google.accounts.id) { show(); return; }
+    if (googleLoading) return;
+    googleLoading = true;
+    const sc = document.createElement('script');
+    sc.src = 'https://accounts.google.com/gsi/client'; sc.async = true; sc.defer = true;
+    sc.onload = show;
+    sc.onerror = () => { googleLoading = false; /* blocked / offline: the manual form below still works */ };
+    document.head.appendChild(sc);
+  }
   function getUser(){ try { return JSON.parse(localStorage.getItem('persianUser') || 'null'); } catch(e){ return null; } }
   function setUser(u){ try { if (u) localStorage.setItem('persianUser', JSON.stringify(u)); else localStorage.removeItem('persianUser'); } catch(e){} }
   function applyUserUI(){
@@ -1624,11 +1664,14 @@
     document.getElementById('loginFormView').style.display = u ? 'none' : '';
     document.getElementById('loginUserView').style.display = u ? '' : 'none';
     if (u) {
-      document.getElementById('loginAvatar').textContent = u.name.trim().charAt(0);
+      const av = document.getElementById('loginAvatar');
+      if (u.picture) { av.innerHTML = ''; const im = document.createElement('img'); im.src = u.picture; im.alt = ''; im.referrerPolicy = 'no-referrer'; av.appendChild(im); }
+      else av.textContent = u.name.trim().charAt(0);
       document.getElementById('loginHello').textContent = 'سلام ' + u.name;
-      document.getElementById('loginPhoneShow').textContent = u.phone;
+      document.getElementById('loginPhoneShow').textContent = u.phone || u.email || '';
     }
     document.getElementById('loginStatus').textContent = '';
+    if (!u) initGoogle();
     closeMenuFn();
     loginOverlay.classList.add('open');
   }
@@ -1648,7 +1691,7 @@
   }
   document.getElementById('loginSubmit').addEventListener('click', submitLogin);
   ['loginName','loginPhone'].forEach(id => document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') submitLogin(); }));
-  document.getElementById('loginLogout').addEventListener('click', () => { setUser(null); applyUserUI(); closeLogin(); });
+  document.getElementById('loginLogout').addEventListener('click', () => { try { if (window.google && google.accounts && google.accounts.id) google.accounts.id.disableAutoSelect(); } catch(e){} setUser(null); applyUserUI(); closeLogin(); });
   applyUserUI();
 
   /* ---- Details page ---- */
@@ -1742,7 +1785,7 @@
         body: JSON.stringify({
           access_key: commentsKey,
           subject: 'نظر درباره «' + ((detailSlide && detailSlide.label) || '') + '»',
-          name, message: text + (u ? '\n\nشماره: ' + u.phone : '')
+          name, message: text + (u ? '\n\n' + (u.phone ? 'شماره: ' + u.phone : '') + (u.email ? '\nایمیل: ' + u.email : '') : '')
         })
       });
       if (res.ok) { document.getElementById('dCmtText').value = ''; st.textContent = 'نظرت ارسال شد. ممنون 🙏'; }
@@ -1927,6 +1970,7 @@
       }
       if (cfg.whatsapp) { shopWhatsapp = cfg.whatsapp; }
       if (cfg.commentsKey) { commentsKey = cfg.commentsKey; }
+      if (cfg.googleClientId) { googleClientId = String(cfg.googleClientId).trim(); }
       if (cfg.aboutText) {
         aboutText = cfg.aboutText;
         const aboutPageText = document.getElementById('aboutPageText');
