@@ -55,6 +55,21 @@
   .help{font-size:11.5px;color:var(--muted);line-height:1.8;margin:6px 0 0;}
   .thumb{width:100%;height:90px;border-radius:10px;object-fit:cover;margin-top:8px;display:none;background:#eee;}
   a.small{font-size:12px;color:var(--blue);}
+  /* قبل از ورود فقط کارت ورود دیده می‌شه */
+  body:not(.authed) .tabs, body:not(.authed) .tabpage, body:not(.authed) .after-login{display:none;}
+  details.adv{margin-top:14px;} details.adv summary{cursor:pointer;font-size:12.5px;color:var(--muted);}
+  .tab{font-size:12.5px;padding:10px 4px;}
+  .ocard{padding:14px 0;border-bottom:1px solid #EEEEEC;font-size:12.5px;line-height:1.9;}
+  .ocard:last-child{border-bottom:none;}
+  .ocard .top{display:flex;justify-content:space-between;gap:8px;align-items:center;}
+  .ocard .top b{font-size:14px;direction:ltr;}
+  .ocard .when{color:var(--muted);font-size:11.5px;}
+  .ocard .items{background:#FAFAF9;border-radius:10px;padding:8px 10px;margin:6px 0;white-space:pre-line;}
+  .ocard .row{display:flex;gap:8px;align-items:center;margin-top:6px;}
+  .ocard select{flex:1;padding:8px 10px;}
+  .cmsg{white-space:pre-wrap;word-break:break-word;background:#FAFAF9;border-radius:10px;padding:8px 10px;margin:6px 0;}
+  .stat{display:flex;justify-content:space-between;font-size:12.5px;padding:7px 0;border-bottom:1px solid #EEEEEC;}
+  .stat:last-child{border-bottom:none;}
 </style>
 </head>
 <body>
@@ -63,32 +78,45 @@
   <p class="sub">از همین‌جا محصول یا اطلاعیه اضافه کنید و عکس منو/هدر رو تغییر بدید.</p>
 
   <div class="card">
-    <h2>اتصال به گیت‌هاب</h2>
-    <label>نام کاربری گیت‌هاب (owner)</label>
-    <input type="text" id="cfgOwner" value="persian4634">
-    <div class="row2">
-      <div>
-        <label>نام ریپازیتوری</label>
-        <input type="text" id="cfgRepo" value="Persian">
-      </div>
-      <div>
-        <label>شاخه (branch)</label>
-        <input type="text" id="cfgBranch" value="main">
-      </div>
+    <h2>ورود به پنل</h2>
+    <div id="loginView">
+      <label>آدرس بک‌اند</label>
+      <input type="text" id="cfgApi" dir="ltr" placeholder="https://your-app.runflare.run">
+      <label>رمز ادمین</label>
+      <input type="password" id="cfgPass" placeholder="رمزی که روی سرور تنظیم کردید" autocomplete="current-password">
+      <button class="btn btn-primary" id="loginBtn">ورود</button>
+      <p class="help">دیگه توکن گیت‌هاب تو مرورگر نگه داشته نمی‌شه؛ توکن فقط روی سرور هست و با رمز ادمین وارد می‌شید. ورود شما با بستن تب خودکار تموم می‌شه.</p>
     </div>
-    <label>توکن دسترسی گیت‌هاب (Personal Access Token)</label>
-    <input type="password" id="cfgToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
-    <div class="check">
-      <input type="checkbox" id="cfgSave" checked>
-      <label for="cfgSave" style="margin:0;color:var(--muted);font-weight:400;">توکن فقط در همین مرورگر ذخیره بشه</label>
+    <div id="sessionView" style="display:none;">
+      <p class="help" style="margin-top:0;">وارد شدید ✅</p>
+      <button class="btn btn-secondary" id="saveApiBtn">ذخیره آدرس بک‌اند تو سایت</button>
+      <p class="help">یه‌بار این دکمه رو بزنید تا سایت بدونه سفارش‌ها، لایک‌ها و نظرات رو به کجا بفرسته.</p>
+      <button class="btn btn-danger" id="logoutBtn">خروج</button>
     </div>
-    <p class="help">توکن رو فقط خودتون می‌بینید (تو مرورگر خودتون ذخیره می‌شه) و مستقیم به گیت‌هاب فرستاده می‌شه — جای دیگه‌ای ذخیره نمی‌شه. اگه نمی‌دونید چطور توکن بسازید، از کلود بپرسید.</p>
+    <div class="status" id="authStatus"></div>
+    <details class="adv">
+      <summary>تنظیمات ریپازیتوری (پیشرفته)</summary>
+      <label>نام کاربری گیت‌هاب (owner)</label>
+      <input type="text" id="cfgOwner" value="persian4634">
+      <div class="row2">
+        <div>
+          <label>نام ریپازیتوری</label>
+          <input type="text" id="cfgRepo" value="Persian">
+        </div>
+        <div>
+          <label>شاخه (branch)</label>
+          <input type="text" id="cfgBranch" value="main">
+        </div>
+      </div>
+      <p class="help">این‌ها فقط برای نمایش پیش‌نمایش عکس‌ها لازمه. ریپازیتوری واقعی که تغییرات توش نوشته می‌شه رو متغیر CONTENT_REPO روی سرور تعیین می‌کنه.</p>
+    </details>
   </div>
 
   <div class="tabs">
     <div class="tab active" data-tab="post">افزودن پست</div>
     <div class="tab" data-tab="look">عکس منو/هدر</div>
     <div class="tab" data-tab="list">لیست و حذف</div>
+    <div class="tab" data-tab="orders">سفارش‌ها</div>
   </div>
 
   <!-- Add post -->
@@ -217,6 +245,36 @@
     </div>
   </div>
 
+  <!-- Orders / comments / likes / backup -->
+  <div class="tabpage" id="tab-orders">
+    <div class="card">
+      <h2>سفارش‌ها</h2>
+      <button class="btn btn-secondary" id="loadOverviewBtn">دریافت آخرین اطلاعات</button>
+      <div class="status" id="ordersStatus"></div>
+      <div id="ordersBox"></div>
+    </div>
+    <div class="card">
+      <h2>نظرات مشتری‌ها (خصوصی)</h2>
+      <div id="commentsBox"><p class="help">برای دیدن نظرها، «دریافت آخرین اطلاعات» رو بزنید.</p></div>
+    </div>
+    <div class="card">
+      <h2>لایک استوری‌ها</h2>
+      <div id="likesBox"><p class="help">—</p></div>
+    </div>
+    <div class="card">
+      <h2>بکاپ داده‌ها</h2>
+      <p class="help" style="margin-top:0;">سفارش‌ها و نظرها خودکار روی یه ریپوی خصوصی گیت‌هاب بکاپ می‌شن. موقع تمدید سرویس رایگان ۳‌ماهه، داده‌ها از همون‌جا برمی‌گردن.</p>
+      <div id="backupInfo" class="help"></div>
+      <button class="btn btn-primary" id="backupNowBtn">بکاپ همین حالا روی گیت‌هاب</button>
+      <button class="btn btn-secondary" id="backupDownloadBtn">دانلود فایل بکاپ</button>
+      <button class="btn btn-secondary" id="restoreGhBtn">بازیابی از گیت‌هاب</button>
+      <label style="margin-top:14px;">بازیابی از فایل بکاپ</label>
+      <input type="file" id="restoreFile" accept="application/json,.json">
+      <button class="btn btn-danger" id="restoreFileBtn">بازیابی از این فایل</button>
+      <div class="status" id="backupStatus"></div>
+    </div>
+  </div>
+
   <!-- List / delete -->
   <div class="tabpage" id="tab-list">
     <div class="card">
@@ -238,48 +296,100 @@
       document.querySelectorAll('.tabpage').forEach(p => p.classList.remove('active'));
       tab.classList.add('active');
       document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+      if (tab.dataset.tab === 'orders' && typeof loadOverview === 'function' && document.body.classList.contains('authed')) loadOverview();
     });
   });
 
-  // ---------- Config / token persistence ----------
+  // ---------- Config / admin session ----------
   const els = {
     owner: document.getElementById('cfgOwner'),
     repo: document.getElementById('cfgRepo'),
     branch: document.getElementById('cfgBranch'),
-    token: document.getElementById('cfgToken'),
-    save: document.getElementById('cfgSave'),
+    api: document.getElementById('cfgApi'),
+    pass: document.getElementById('cfgPass'),
   };
+  let adminToken = '';
+  try { adminToken = sessionStorage.getItem('persianAdminToken') || ''; } catch(e){}
+
   (function loadSaved(){
-    const saved = localStorage.getItem('persianAdminCfg');
-    if (saved) {
-      try {
-        const c = JSON.parse(saved);
-        if (c.owner) els.owner.value = c.owner;
-        if (c.repo) els.repo.value = c.repo;
-        if (c.branch) els.branch.value = c.branch;
-        if (c.token) els.token.value = c.token;
-      } catch(e){}
-    }
+    try {
+      const saved = localStorage.getItem('persianAdminCfg');
+      if (!saved) return;
+      const c = JSON.parse(saved);
+      if (c.owner) els.owner.value = c.owner;
+      if (c.repo) els.repo.value = c.repo;
+      if (c.branch) els.branch.value = c.branch;
+      if (c.api) els.api.value = c.api;
+      // نسخه‌های قبلی پنل توکن گیت‌هاب رو تو مرورگر نگه می‌داشتن؛ همین‌جا پاکش می‌کنیم
+      if (c.token) { delete c.token; localStorage.setItem('persianAdminCfg', JSON.stringify(c)); }
+    } catch(e){}
   })();
   function persistCfgIfNeeded(){
-    if (els.save.checked) {
+    try {
       localStorage.setItem('persianAdminCfg', JSON.stringify({
         owner: els.owner.value.trim(), repo: els.repo.value.trim(),
-        branch: els.branch.value.trim(), token: els.token.value.trim()
+        branch: els.branch.value.trim(), api: apiBase()
       }));
-    } else {
-      localStorage.removeItem('persianAdminCfg');
-    }
+    } catch(e){}
   }
-
+  function apiBase(){ return els.api.value.trim().replace(/\/+$/, ''); }
   function cfg(){
     return {
       owner: els.owner.value.trim(),
       repo: els.repo.value.trim(),
       branch: els.branch.value.trim() || 'main',
-      token: els.token.value.trim()
+      api: apiBase(), token: adminToken
     };
   }
+  function validateCfg(){
+    const c = cfg();
+    if (!c.api || !c.token) { throw new Error('اول وارد پنل بشید (آدرس بک‌اند و رمز ادمین).'); }
+    return c;
+  }
+  function setAuthed(on){
+    document.body.classList.toggle('authed', !!on);
+    document.getElementById('loginView').style.display = on ? 'none' : '';
+    document.getElementById('sessionView').style.display = on ? '' : 'none';
+    if (!on) { adminToken = ''; try { sessionStorage.removeItem('persianAdminToken'); } catch(e){} }
+  }
+  setAuthed(!!(adminToken && apiBase()));
+
+  async function apiFetch(path, opts){
+    const c = validateCfg();
+    let res;
+    try {
+      res = await fetch(c.api + path, Object.assign({}, opts, {
+        headers: Object.assign({ 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminToken }, (opts && opts.headers) || {})
+      }));
+    } catch(e) { throw new Error('به سرور وصل نشد. اینترنت یا آدرس بک‌اند رو چک کنید.'); }
+    if (res.status === 401) { setAuthed(false); throw new Error('نشست تموم شد؛ دوباره وارد بشید.'); }
+    return res;
+  }
+
+  async function doLogin(){
+    const st = document.getElementById('authStatus');
+    try {
+      const base = apiBase();
+      if (!/^https?:\/\//.test(base)) throw new Error('آدرس بک‌اند باید با https:// شروع بشه.');
+      if (!els.pass.value) throw new Error('رمز ادمین رو وارد کنید.');
+      setStatus('authStatus', 'busy', 'در حال ورود...');
+      let res;
+      try {
+        res = await fetch(base + '/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: els.pass.value }) });
+      } catch(e) { throw new Error('به سرور وصل نشد. آدرس بک‌اند یا اینترنت رو چک کنید.'); }
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(j.error || ('خطا (' + res.status + ')'));
+      adminToken = j.token;
+      try { sessionStorage.setItem('persianAdminToken', adminToken); } catch(e){}
+      els.pass.value = '';
+      persistCfgIfNeeded();
+      setAuthed(true);
+      st.className = 'status';
+    } catch(e) { setStatus('authStatus', 'err', errMsg(e)); }
+  }
+  document.getElementById('loginBtn').addEventListener('click', doLogin);
+  els.pass.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+  document.getElementById('logoutBtn').addEventListener('click', () => { setAuthed(false); document.getElementById('authStatus').className = 'status'; });
 
   // ---------- Base64 helpers (UTF-8 safe) ----------
   function b64EncodeUnicode(str) {
@@ -368,31 +478,20 @@
   }
 
   // ---------- GitHub API helpers ----------
+  // نوشتن/خوندن روی گیت‌هاب از طریق بک‌اند؛ توکن فقط روی سرور هست
   async function ghGetFile(path){
-    const c = cfg();
-    const res = await fetch(`https://api.github.com/repos/${c.owner}/${c.repo}/contents/${path}?ref=${c.branch}`, {
-      headers: { Authorization: `token ${c.token}`, Accept: 'application/vnd.github+json' }
-    });
-    if (res.status === 404) return { exists:false, sha:null, content:null };
-    if (!res.ok) throw new Error('خطا در خواندن ' + path + ' (' + res.status + ')');
-    const data = await res.json();
+    const res = await apiFetch('/api/admin/gh/file?path=' + encodeURIComponent(path));
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || ('خطا در خواندن ' + path + ' (' + res.status + ')'));
+    if (!data.exists) return { exists:false, sha:null, content:null };
     return { exists:true, sha:data.sha, content: b64DecodeUnicode(data.content) };
   }
 
   async function ghPutFile(path, contentB64, message, sha){
-    const c = cfg();
-    const body = { message, content: contentB64, branch: c.branch };
-    if (sha) body.sha = sha;
-    const res = await fetch(`https://api.github.com/repos/${c.owner}/${c.repo}/contents/${path}`, {
-      method: 'PUT',
-      headers: { Authorization: `token ${c.token}`, Accept: 'application/vnd.github+json' },
-      body: JSON.stringify(body)
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.message || ('خطای گیت‌هاب: ' + res.status));
-    }
-    return res.json();
+    const res = await apiFetch('/api/admin/gh/file', { method: 'PUT', body: JSON.stringify({ path, content: contentB64, message, sha }) });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || ('خطای سرور: ' + res.status));
+    return data;
   }
 
   async function ghPutText(path, text, message, sha){
@@ -412,12 +511,6 @@
     el.className = 'status show ' + type;
     el.textContent = msg;
   }
-  function validateCfg(){
-    const c = cfg();
-    if (!c.owner || !c.repo || !c.token) { throw new Error('لطفاً نام کاربری، ریپازیتوری و توکن گیت‌هاب رو وارد کنید.'); }
-    return c;
-  }
-
   // ---------- Add post ----------
   const postType = document.getElementById('postType');
   const priceLabel = document.getElementById('priceLabel');
@@ -976,6 +1069,139 @@
   }
 
   document.getElementById('loadListBtn').addEventListener('click', refreshList);
+
+  // ---------- Save backend address into the public site config ----------
+  document.getElementById('saveApiBtn').addEventListener('click', async () => {
+    try {
+      const c = validateCfg();
+      persistCfgIfNeeded();
+      setStatus('authStatus', 'busy', 'در حال ذخیره...');
+      await saveConfigPatch({ apiBase: c.api });
+      setStatus('authStatus', 'ok', 'ذخیره شد 🎉 چند دقیقه بعد (بعد از آپدیت گیت‌هاب‌پیجز) سایت به بک‌اند وصل می‌شه.');
+    } catch (e) { setStatus('authStatus', 'err', 'خطا: ' + errMsg(e)); }
+  });
+
+  // ---------- Orders / comments / likes ----------
+  const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+  const STATUS_FA = { new:'جدید', confirmed:'تأیید شده', shipped:'ارسال شد', done:'تحویل شد', canceled:'لغو شد' };
+  const KIND_FA = { story:'استوری', section:'کارت هدر', general:'فرم نظرات' };
+  const fmtDate = iso => { try { return new Date(iso).toLocaleString('fa-IR'); } catch(e) { return iso || ''; } };
+  const fmtToman = n => (Number(n) || 0).toLocaleString('fa-IR') + ' تومان';
+
+  function renderOverview(d){
+    const ob = document.getElementById('ordersBox');
+    ob.innerHTML = d.orders.length ? d.orders.map(o => `
+      <div class="ocard">
+        <div class="top"><b>#${esc(o.id)}</b><span class="when">${esc(fmtDate(o.createdAt))}</span></div>
+        <div>${o.customer && o.customer.name ? esc(o.customer.name) : 'بدون نام'}${o.customer && o.customer.phone ? ' · <a class="small" href="tel:' + esc(o.customer.phone) + '">' + esc(o.customer.phone) + '</a>' : ''}</div>
+        <div class="items">${o.items.map(i => esc(i.title) + ' × ' + i.qty + ' = ' + esc(fmtToman(i.price * i.qty))).join('\n')}</div>
+        <div><b>جمع: ${esc(fmtToman(o.total))}</b></div>
+        <div class="row">
+          <select data-oid="${esc(o.id)}">${Object.keys(STATUS_FA).map(k => `<option value="${k}"${o.status === k ? ' selected' : ''}>${STATUS_FA[k]}</option>`).join('')}</select>
+          <button class="del-btn" data-del-order="${esc(o.id)}">حذف</button>
+        </div>
+      </div>`).join('') : '<p class="help">هنوز سفارشی ثبت نشده.</p>';
+    ob.querySelectorAll('select[data-oid]').forEach(sel => sel.addEventListener('change', async () => {
+      try {
+        const r = await apiFetch('/api/admin/orders/' + encodeURIComponent(sel.dataset.oid), { method: 'PATCH', body: JSON.stringify({ status: sel.value }) });
+        if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || 'خطا');
+        setStatus('ordersStatus', 'ok', 'وضعیت سفارش بروزرسانی شد.');
+      } catch (e) { setStatus('ordersStatus', 'err', 'خطا: ' + errMsg(e)); }
+    }));
+    ob.querySelectorAll('[data-del-order]').forEach(b => b.addEventListener('click', async () => {
+      if (!confirm('این سفارش برای همیشه حذف بشه؟')) return;
+      try {
+        const r = await apiFetch('/api/admin/orders/' + encodeURIComponent(b.dataset.delOrder), { method: 'DELETE' });
+        if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || 'خطا');
+        loadOverview();
+      } catch (e) { setStatus('ordersStatus', 'err', 'خطا: ' + errMsg(e)); }
+    }));
+
+    const cb = document.getElementById('commentsBox');
+    cb.innerHTML = d.comments.length ? d.comments.map(c => `
+      <div class="ocard">
+        <div class="top"><b style="direction:rtl;">${esc(c.name)}</b><span class="when">${esc(fmtDate(c.createdAt))}</span></div>
+        <div class="when">${esc(KIND_FA[c.kind] || '')}${c.ref ? ' · ' + esc(c.ref) : ''}${c.phone ? ' · ' + esc(c.phone) : ''}${c.email ? ' · ' + esc(c.email) : ''}</div>
+        <div class="cmsg">${esc(c.message)}</div>
+        <div class="row"><button class="del-btn" data-del-cmt="${esc(c.id)}">حذف</button></div>
+      </div>`).join('') : '<p class="help">هنوز نظری نرسیده.</p>';
+    cb.querySelectorAll('[data-del-cmt]').forEach(b => b.addEventListener('click', async () => {
+      if (!confirm('این نظر حذف بشه؟')) return;
+      try {
+        const r = await apiFetch('/api/admin/comments/' + encodeURIComponent(b.dataset.delCmt), { method: 'DELETE' });
+        if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || 'خطا');
+        loadOverview();
+      } catch (e) { setStatus('ordersStatus', 'err', 'خطا: ' + errMsg(e)); }
+    }));
+
+    const lk = Object.entries(d.likes || {}).filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1]);
+    document.getElementById('likesBox').innerHTML = lk.length
+      ? lk.map(([k, n]) => `<div class="stat"><span>${esc(k.split('|')[0] || 'بدون عنوان')}</span><b>${Number(n).toLocaleString('fa-IR')} لایک</b></div>`).join('')
+      : '<p class="help">هنوز لایکی ثبت نشده.</p>';
+
+    const b = d.backup || {};
+    document.getElementById('backupInfo').innerHTML = !b.configured
+      ? '⚠️ بکاپ گیت‌هاب روی سرور تنظیم نشده (متغیرهای GITHUB_TOKEN و BACKUP_REPO). تا اون موقع حتماً فایل بکاپ رو خودتون دانلود کنید.'
+      : (b.at ? (b.ok ? '✅ آخرین بکاپ موفق: ' + esc(fmtDate(b.at)) : '❌ آخرین بکاپ ناموفق بود: ' + esc(b.error || '')) : 'هنوز بکاپی گرفته نشده.')
+        + '<br>مجموع: ' + Number(d.totals.orders).toLocaleString('fa-IR') + ' سفارش، ' + Number(d.totals.comments).toLocaleString('fa-IR') + ' نظر';
+  }
+
+  async function loadOverview(){
+    try {
+      validateCfg();
+      setStatus('ordersStatus', 'busy', 'در حال دریافت...');
+      const r = await apiFetch('/api/admin/overview');
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || ('خطا (' + r.status + ')'));
+      renderOverview(d);
+      document.getElementById('ordersStatus').className = 'status';
+    } catch (e) { setStatus('ordersStatus', 'err', 'خطا: ' + errMsg(e)); }
+  }
+  document.getElementById('loadOverviewBtn').addEventListener('click', loadOverview);
+
+  // ---------- Backup ----------
+  document.getElementById('backupNowBtn').addEventListener('click', async () => {
+    try {
+      setStatus('backupStatus', 'busy', 'در حال بکاپ‌گیری...');
+      const r = await apiFetch('/api/admin/backup/now', { method: 'POST', body: '{}' });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(j.error || ('خطا (' + r.status + ')'));
+      setStatus('backupStatus', 'ok', 'بکاپ روی گیت‌هاب ذخیره شد 🎉');
+      loadOverview();
+    } catch (e) { setStatus('backupStatus', 'err', 'خطا: ' + errMsg(e)); }
+  });
+  document.getElementById('backupDownloadBtn').addEventListener('click', async () => {
+    try {
+      setStatus('backupStatus', 'busy', 'در حال دریافت...');
+      const r = await apiFetch('/api/admin/backup/download');
+      if (!r.ok) throw new Error('خطا (' + r.status + ')');
+      const blob = await r.blob();
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'persian-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+      document.body.appendChild(a); a.click(); a.remove();
+      setStatus('backupStatus', 'ok', 'فایل بکاپ دانلود شد.');
+    } catch (e) { setStatus('backupStatus', 'err', 'خطا: ' + errMsg(e)); }
+  });
+  async function doRestore(payload, okMsg){
+    try {
+      if (!confirm('داده‌های فعلی (سفارش‌ها، نظرها، لایک‌ها) با بکاپ جایگزین می‌شن. مطمئنید؟')) return;
+      setStatus('backupStatus', 'busy', 'در حال بازیابی...');
+      const r = await apiFetch('/api/admin/backup/restore', { method: 'POST', body: JSON.stringify(payload) });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(j.error || ('خطا (' + r.status + ')'));
+      setStatus('backupStatus', 'ok', okMsg + ' (' + j.orders + ' سفارش، ' + j.comments + ' نظر)');
+      loadOverview();
+    } catch (e) { setStatus('backupStatus', 'err', 'خطا: ' + errMsg(e)); }
+  }
+  document.getElementById('restoreGhBtn').addEventListener('click', () => doRestore({ fromGithub: true }, 'از گیت‌هاب بازیابی شد 🎉'));
+  document.getElementById('restoreFileBtn').addEventListener('click', async () => {
+    const f = document.getElementById('restoreFile').files[0];
+    if (!f) { setStatus('backupStatus', 'err', 'اول فایل بکاپ رو انتخاب کنید.'); return; }
+    let data;
+    try { data = JSON.parse(await f.text()); } catch (e) { setStatus('backupStatus', 'err', 'این فایل JSON معتبر نیست.'); return; }
+    doRestore({ data }, 'از فایل بازیابی شد 🎉');
+  });
 </script>
 </body>
 </html>

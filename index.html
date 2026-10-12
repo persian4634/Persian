@@ -1069,6 +1069,42 @@
 </div>
 
 <script>
+  /* ---- Backend (orders / story likes / private comments) ----
+     آدرس بک‌اند از data/config.json (کلید apiBase) خونده می‌شه و از پنل ادمین تنظیم می‌شه.
+     اگه تنظیم نشده باشه، سایت مثل قبل کار می‌کنه (سفارش فقط از واتساپ). */
+  let apiBase = '';
+  function apiUrl(p){ return apiBase ? apiBase.replace(/\/+$/, '') + p : ''; }
+  function clientId(){
+    try {
+      let id = localStorage.getItem('persianClientId');
+      if (!id) {
+        id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : (Date.now().toString(36) + Math.random().toString(36).slice(2, 12));
+        localStorage.setItem('persianClientId', id);
+      }
+      return id;
+    } catch(e) { return 'anon-' + Math.random().toString(36).slice(2, 12); }
+  }
+  async function apiPost(p, body){
+    const u = apiUrl(p);
+    if (!u) throw new Error('no-api');
+    const r = await fetch(u, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), keepalive: true });
+    if (!r.ok) throw new Error('http-' + r.status);
+    return r.json().catch(() => ({}));
+  }
+  // Private comment: goes to our own backend when configured, otherwise to web3forms (old behaviour).
+  async function postComment(subject, kind, ref, name, text, u){
+    if (apiBase) {
+      await apiPost('/api/comments', { kind, ref, name, message: text, phone: (u && u.phone) || '', email: (u && u.email) || '' });
+      return true;
+    }
+    const extra = u ? '\n\n' + (u.phone ? 'شماره: ' + u.phone : '') + (u.email ? '\nایمیل: ' + u.email : '') : '';
+    const res = await fetch('https://api.web3forms.com/submit', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ access_key: commentsKey, subject, name, message: text + extra })
+    });
+    return res.ok;
+  }
+
   const root = document.documentElement;
   function setTheme(dark){
     root.setAttribute('data-theme', dark ? 'dark' : 'light');
@@ -1356,6 +1392,7 @@
     const likes = readStore('storyLikes');
     if (likes[k]) delete likes[k]; else likes[k] = 1;
     writeStore('storyLikes', likes);
+    if (apiBase) apiPost('/api/likes', { key: k, liked: !!likes[k], clientId: clientId() }).catch(() => {});
     storyLikeBtn.classList.remove('liked'); void storyLikeBtn.offsetWidth;
     syncLikeButton();
   });
@@ -1373,21 +1410,13 @@
   async function sendStoryComment(){
     const msg = storyInput.value.trim();
     if (!msg) return;
-    if (!commentsKey) { showStoryToast('فعلاً ارسال نظر فعال نشده'); return; }
+    if (!commentsKey && !apiBase) { showStoryToast('فعلاً ارسال نظر فعال نشده'); return; }
     const title = storyItems[storyIndex].dataset.title || '';
     storySendBtn.disabled = true;
     try {
-      const res = await fetch('https://api.web3forms.com/submit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          access_key: commentsKey,
-          subject: 'نظر روی استوری «' + title + '»',
-          name: 'بازدیدکننده سایت',
-          message: msg
-        })
-      });
-      if (res.ok) {
+      const _cu = getUser();
+      const ok = await postComment('نظر روی استوری «' + title + '»', 'story', title, (_cu && _cu.name) || 'بازدیدکننده سایت', msg, _cu);
+      if (ok) {
         storyInput.value = ''; storyBar.classList.remove('typing'); storyInput.blur();
         showStoryToast('نظرت ارسال شد 🙏');
         resumeStory();
@@ -1497,10 +1526,20 @@
       alert('شماره واتساپ فروشگاه هنوز تو پنل مدیریت تنظیم نشده.');
       return;
     }
+    const orderCode = 'P' + Date.now().toString(36).toUpperCase().slice(-6) + Math.random().toString(36).toUpperCase().replace(/[^A-Z0-9]/g, '').padEnd(3, '0').slice(0, 3);
     let msg = 'سلام، می‌خوام این سفارش رو ثبت کنم:\n\n';
     const _u = getUser(); if (_u) msg = 'سلام، من ' + _u.name + (_u.phone ? ' هستم (' + _u.phone + ').' : ' هستم.') + '\nمی‌خوام این سفارش رو ثبت کنم:\n\n';
     cart.forEach(item => { msg += `- ${item.title} × ${item.qty} = ${formatToman(item.price * item.qty)}\n`; });
     msg += `\nجمع کل: ${formatToman(cartTotal())}`;
+    msg += `\nکد سفارش: ${orderCode}`;
+    if (apiBase) {
+      // ثبت سفارش روی سرور (بدون منتظر موندن)؛ اگه نشد، سفارش از طریق واتساپ هنوز می‌رسه
+      apiPost('/api/orders', {
+        id: orderCode,
+        customer: { name: (_u && _u.name) || '', phone: (_u && _u.phone) || '', email: (_u && _u.email) || '' },
+        items: cart.map(i => ({ id: i.id, title: i.title, price: i.price, qty: i.qty }))
+      }).catch(() => {});
+    }
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
   });
   renderCartBadge();
@@ -1776,19 +1815,13 @@
     const text = document.getElementById('dCmtText').value.trim();
     const name = document.getElementById('dCmtName').value.trim() || 'بازدیدکننده سایت';
     if (!text) { st.textContent = 'اول نظرت رو بنویس.'; return; }
-    if (!commentsKey) { st.textContent = 'فعلاً ارسال نظر فعال نشده.'; return; }
+    if (!commentsKey && !apiBase) { st.textContent = 'فعلاً ارسال نظر فعال نشده.'; return; }
     const btn = document.getElementById('dCmtSend'); btn.disabled = true; st.textContent = 'در حال ارسال...';
     try {
       const u = getUser();
-      const res = await fetch('https://api.web3forms.com/submit', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          access_key: commentsKey,
-          subject: 'نظر درباره «' + ((detailSlide && detailSlide.label) || '') + '»',
-          name, message: text + (u ? '\n\n' + (u.phone ? 'شماره: ' + u.phone : '') + (u.email ? '\nایمیل: ' + u.email : '') : '')
-        })
-      });
-      if (res.ok) { document.getElementById('dCmtText').value = ''; st.textContent = 'نظرت ارسال شد. ممنون 🙏'; }
+      const lbl = (detailSlide && detailSlide.label) || '';
+      const ok = await postComment('نظر درباره «' + lbl + '»', 'section', lbl, name, text, u);
+      if (ok) { document.getElementById('dCmtText').value = ''; st.textContent = 'نظرت ارسال شد. ممنون 🙏'; }
       else st.textContent = 'ارسال نشد، دوباره امتحان کن.';
     } catch(e) { st.textContent = 'اتصال اینترنت رو چک کن.'; }
     btn.disabled = false;
@@ -1970,6 +2003,7 @@
       }
       if (cfg.whatsapp) { shopWhatsapp = cfg.whatsapp; }
       if (cfg.commentsKey) { commentsKey = cfg.commentsKey; }
+      if (cfg.apiBase) { apiBase = String(cfg.apiBase).trim(); }
       if (cfg.googleClientId) { googleClientId = String(cfg.googleClientId).trim(); }
       if (cfg.aboutText) {
         aboutText = cfg.aboutText;
@@ -2006,7 +2040,7 @@
       const msg = document.getElementById('commentMsg').value.trim();
       const name = document.getElementById('commentName').value.trim();
       if (!msg) return;
-      if (!commentsKey) {
+      if (!commentsKey && !apiBase) {
         statusEl.textContent = 'فعلاً امکان ارسال نظر فعال نشده. بعداً دوباره امتحان کنید.';
         return;
       }
@@ -2014,17 +2048,8 @@
       submitBtn.disabled = true;
       statusEl.textContent = 'در حال ارسال...';
       try {
-        const res = await fetch('https://api.web3forms.com/submit', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            access_key: commentsKey,
-            subject: 'نظر جدید از سایت پرشین',
-            name: name || 'ناشناس',
-            message: msg
-          })
-        });
-        if (res.ok) {
+        const ok = await postComment('نظر جدید از سایت پرشین', 'general', '', name || 'ناشناس', msg, getUser());
+        if (ok) {
           statusEl.textContent = 'نظرتون ارسال شد، ممنون 🙏';
           commentForm.reset();
         } else {
