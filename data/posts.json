@@ -185,7 +185,11 @@
     "originalPrice": 774000,
     "ribbon": "تخفیف ۳۶٪",
     "eyebrow": "",
-    "image": "images/1790359921052-1000126868.jpg"
+    "image": "images/1790359921052-1000126868.jpg",
+    "category": "گوشواره",
+    "soldOut": false,
+    "bestseller": true,
+    "images": []
   },
   {
     "id": "1790359425766",
