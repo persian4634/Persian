@@ -57,7 +57,11 @@
     "originalPrice": 968000,
     "ribbon": "تخفیف ۵۰٪",
     "eyebrow": "",
-    "image": "images/1791625280752-1000129296.png"
+    "image": "images/1791625280752-1000129296.png",
+    "category": "تل",
+    "soldOut": false,
+    "bestseller": false,
+    "images": []
   },
   {
     "id": "1790853819499",
