@@ -213,7 +213,11 @@
     "originalPrice": 458000,
     "ribbon": "تخفیف ۲۹٪",
     "eyebrow": "",
-    "image": "images/1790237602283-1000126640.png"
+    "image": "images/1790237602283-1000126640.png",
+    "category": "پابند",
+    "soldOut": false,
+    "bestseller": false,
+    "images": []
   },
   {
     "id": "1790235627954",
