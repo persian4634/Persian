@@ -325,7 +325,11 @@
     "ribbon": "تخفیف ۲۰٪",
     "eyebrow": "",
     "image": "images/1789890954329-1000125855.jpg",
-    "date": "2026-09-20T07:55:56.928Z"
+    "date": "2026-09-20T07:55:56.928Z",
+    "category": "گوشواره",
+    "soldOut": false,
+    "bestseller": false,
+    "images": []
   },
   {
     "id": "1789648766303",
