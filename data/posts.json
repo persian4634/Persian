@@ -73,7 +73,11 @@
     "originalPrice": 2636000,
     "ribbon": "تخفیف ۳٪",
     "eyebrow": "",
-    "image": "images/1790853816980-1000128077.jpg"
+    "image": "images/1790853816980-1000128077.jpg",
+    "category": "دستبند",
+    "soldOut": false,
+    "bestseller": false,
+    "images": []
   },
   {
     "id": "1790853349415",
