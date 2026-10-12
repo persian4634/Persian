@@ -135,15 +135,35 @@
       <input type="text" id="postTitle" placeholder="مثلاً: گردنبند دلبرک">
       <label>توضیحات</label>
       <textarea id="postDesc" placeholder="توضیح کامل... (برای کارت ویژه، همینجا هم تو دکمه «توضیحات» نشون داده می‌شه)"></textarea>
+      <label id="categoryLabel">دسته‌بندی</label>
+      <select id="postCategory">
+        <option value="">بدون دسته</option>
+        <option value="بدلیجات">بدلیجات</option>
+        <option value="کش و کلیپس">کش و کلیپس</option>
+        <option value="عینک آفتابی">عینک آفتابی</option>
+        <option value="جاکلیدی">جاکلیدی</option>
+        <option value="__new__">+ دسته‌ی جدید...</option>
+      </select>
+      <input type="text" id="postCategoryNew" placeholder="اسم دسته‌ی جدید" style="display:none;margin-top:8px;">
       <label id="priceLabel">قیمت نهایی — تومان (فقط عدد)</label>
       <input type="number" id="postPrice" placeholder="مثلاً: 185000" inputmode="numeric">
       <label id="origPriceLabel">قیمت قبل از تخفیف — تومان (اختیاری، فقط عدد)</label>
       <input type="number" id="postOrigPrice" placeholder="مثلاً: 250000" inputmode="numeric">
       <label id="ribbonLabel">برچسب قرمز روی عکس (اختیاری)</label>
       <input type="text" id="postRibbon" placeholder="مثلاً: پرفروش‌ترین این هفته">
+      <div id="flagsWrap">
+        <div class="check"><input type="checkbox" id="postSoldOut"><label style="margin:0;font-weight:400;color:var(--muted);">ناموجود (دکمه خرید غیرفعال می‌شه)</label></div>
+        <div class="check"><input type="checkbox" id="postBestseller"><label style="margin:0;font-weight:400;color:var(--muted);">برچسب «پرفروش» روی کارت</label></div>
+      </div>
       <label id="postImageLabel">عکس (اختیاری)</label>
       <input type="file" id="postImage" accept="image/*">
       <img id="postPreview" class="thumb">
+      <div id="extraImgWrap">
+        <label>عکس‌های اضافه (اختیاری، تا ۳ عکس — تو صفحه محصول به‌صورت گالری نشون داده می‌شه)</label>
+        <input type="file" id="postExtraImages" accept="image/*" multiple>
+        <p class="help" id="extraImgHelp"></p>
+        <div class="check"><input type="checkbox" id="postClearExtra"><label style="margin:0;font-weight:400;color:var(--muted);">حذف عکس‌های اضافه‌ی فعلی</label></div>
+      </div>
       <button class="btn btn-primary" id="publishBtn">انتشار پست</button>
       <button class="btn btn-secondary" id="cancelEditBtn" style="display:none;">لغو ویرایش</button>
       <div class="status" id="postStatus"></div>
@@ -186,6 +206,14 @@
       <input type="text" id="whatsappNumber" placeholder="مثلاً: 989121234567">
       <button class="btn btn-primary" id="saveWhatsappBtn">ذخیره شماره</button>
       <div class="status" id="whatsappStatus"></div>
+    </div>
+    <div class="card">
+      <h2>کدهای تخفیف</h2>
+      <p class="help">هر خط یه کد: اول کد، بعد = و بعد درصد تخفیف. مثلاً:<br>SALE10=10<br>NOROOZ=20<br>مشتری تو سبد خرید کد رو وارد می‌کنه و تخفیف رو می‌بینه. دقت کنید چون سایت استاتیکه، کدها تو فایل تنظیمات سایت ذخیره می‌شن و کسی که اون فایل رو باز کنه می‌تونه ببینه‌شون؛ پس کد خیلی محرمانه نذارید.</p>
+      <textarea id="discountCodesInput" dir="ltr" style="text-align:left;" placeholder="SALE10=10"></textarea>
+      <button class="btn btn-secondary" id="loadCodesBtn">بارگذاری کدهای فعلی</button>
+      <button class="btn btn-primary" id="saveCodesBtn">ذخیره کدها</button>
+      <div class="status" id="codesStatus"></div>
     </div>
     <div class="card">
       <h2>شبکه‌های اجتماعی</h2>
@@ -522,10 +550,35 @@
   const eyebrowLabel = document.getElementById('eyebrowLabel');
   const postEyebrowInput = document.getElementById('postEyebrow');
   const postImageLabel = document.getElementById('postImageLabel');
+  const postCategory = document.getElementById('postCategory');
+  const postCategoryNew = document.getElementById('postCategoryNew');
+  const categoryLabel = document.getElementById('categoryLabel');
+  postCategory.addEventListener('change', () => {
+    postCategoryNew.style.display = postCategory.value === '__new__' ? 'block' : 'none';
+  });
+  function setCategoryValue(cat){
+    cat = cat || '';
+    if (cat && !Array.from(postCategory.options).some(o => o.value === cat)) {
+      const opt = document.createElement('option');
+      opt.value = cat; opt.textContent = cat;
+      postCategory.insertBefore(opt, postCategory.querySelector('option[value="__new__"]'));
+    }
+    postCategory.value = cat;
+    postCategoryNew.value = '';
+    postCategoryNew.style.display = 'none';
+  }
+  function getCategoryValue(){
+    return postCategory.value === '__new__' ? postCategoryNew.value.trim() : postCategory.value;
+  }
   postType.addEventListener('change', () => {
     const isProduct = postType.value === 'product';
     const isShowcase = postType.value === 'showcase';
     const showPrice = isProduct || isShowcase;
+    document.getElementById('flagsWrap').style.display = showPrice ? 'block' : 'none';
+    document.getElementById('extraImgWrap').style.display = showPrice ? 'block' : 'none';
+    categoryLabel.style.display = showPrice ? 'block' : 'none';
+    postCategory.style.display = showPrice ? 'block' : 'none';
+    if (!showPrice) postCategoryNew.style.display = 'none';
     priceLabel.style.display = showPrice ? 'block' : 'none';
     postPriceInput.style.display = showPrice ? 'block' : 'none';
     origPriceLabel.style.display = showPrice ? 'block' : 'none';
@@ -547,18 +600,35 @@
 
   let editingPostId = null;
   let editingExistingImage = '';
+  let editingExistingExtra = [];
+  const postExtraImages = document.getElementById('postExtraImages');
+  const postSoldOut = document.getElementById('postSoldOut');
+  const postBestseller = document.getElementById('postBestseller');
+  const postClearExtra = document.getElementById('postClearExtra');
+  function updateExtraHelp(){
+    document.getElementById('extraImgHelp').textContent = editingExistingExtra.length
+      ? ('الان ' + editingExistingExtra.length + ' عکس اضافه داره. اگه عکس جدید انتخاب کنی جایگزین‌شون می‌شه.')
+      : '';
+  }
   const publishBtn = document.getElementById('publishBtn');
   const cancelEditBtn = document.getElementById('cancelEditBtn');
 
   function resetPostForm(){
     editingPostId = null;
     editingExistingImage = '';
+    editingExistingExtra = [];
+    postExtraImages.value = '';
+    postClearExtra.checked = false;
+    postSoldOut.checked = false;
+    postBestseller.checked = false;
+    updateExtraHelp();
     document.getElementById('postTitle').value = '';
     document.getElementById('postDesc').value = '';
     document.getElementById('postPrice').value = '';
     document.getElementById('postOrigPrice').value = '';
     document.getElementById('postRibbon').value = '';
     document.getElementById('postEyebrow').value = '';
+    setCategoryValue('');
     postImage.value = '';
     document.getElementById('postPreview').style.display = 'none';
     publishBtn.textContent = 'انتشار پست';
@@ -568,6 +638,12 @@
   function populateEditForm(post){
     editingPostId = post.id;
     editingExistingImage = post.image || '';
+    editingExistingExtra = Array.isArray(post.images) ? post.images.slice() : [];
+    postExtraImages.value = '';
+    postClearExtra.checked = false;
+    postSoldOut.checked = !!post.soldOut;
+    postBestseller.checked = !!post.bestseller;
+    updateExtraHelp();
     postType.value = post.type;
     postType.dispatchEvent(new Event('change'));
     document.getElementById('postTitle').value = post.title || '';
@@ -576,6 +652,7 @@
     document.getElementById('postOrigPrice').value = post.originalPrice || '';
     document.getElementById('postRibbon').value = post.ribbon || '';
     document.getElementById('postEyebrow').value = post.eyebrow || '';
+    setCategoryValue(post.category || '');
     postImage.value = '';
     const prev = document.getElementById('postPreview');
     if (post.image) {
@@ -621,6 +698,18 @@
         imagePath = await ghUploadImage(file);
       }
 
+      const isShop = (type === 'product' || type === 'showcase');
+      let extraPaths = isShop ? editingExistingExtra.slice() : [];
+      if (postClearExtra.checked) extraPaths = [];
+      const extraFiles = isShop ? Array.from(postExtraImages.files).slice(0, 3) : [];
+      if (extraFiles.length) {
+        extraPaths = [];
+        for (let i = 0; i < extraFiles.length; i++) {
+          setStatus('postStatus', 'busy', 'در حال آپلود عکس اضافه ' + (i + 1) + ' از ' + extraFiles.length + '...');
+          extraPaths.push(await ghUploadImage(extraFiles[i]));
+        }
+      }
+
       setStatus('postStatus', 'busy', 'در حال خواندن لیست فعلی...');
       const current = await ghGetFile('data/posts.json');
       let posts = [];
@@ -632,6 +721,10 @@
         originalPrice: (type === 'product' || type === 'showcase') ? (Number(origPrice) || 0) : '',
         ribbon: (type === 'product' || type === 'showcase') ? ribbon : '',
         eyebrow: type === 'showcase' ? eyebrow : '',
+        category: isShop ? getCategoryValue() : '',
+        soldOut: isShop ? postSoldOut.checked : false,
+        bestseller: isShop ? postBestseller.checked : false,
+        images: extraPaths,
         image: imagePath
       };
 
@@ -735,6 +828,50 @@
     } catch (e) {
       setStatus('whatsappStatus', 'err', 'خطا: ' + errMsg(e));
     }
+  });
+
+  // ---------- Discount codes ----------
+  function faDigitsToEn(v){
+    return String(v || '').replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
+  }
+  function parseCodes(text){
+    const out = [], seen = {}, bad = [];
+    faDigitsToEn(text).split('\n').forEach(line => {
+      line = line.trim();
+      if (!line) return;
+      const m = line.match(/^([A-Za-z0-9_\-]{2,24})\s*[=:\s]\s*(\d{1,2})\s*%?$/);
+      const pct = m ? Number(m[2]) : 0;
+      if (!m || pct < 1 || pct > 90) { bad.push(line); return; }
+      const code = m[1].toUpperCase();
+      if (seen[code]) return;
+      seen[code] = 1;
+      out.push({ code, percent: pct });
+    });
+    return { list: out, bad };
+  }
+  document.getElementById('loadCodesBtn').addEventListener('click', async () => {
+    try {
+      validateCfg();
+      persistCfgIfNeeded();
+      setStatus('codesStatus', 'busy', 'در حال دریافت...');
+      const current = await ghGetFile('data/config.json');
+      let config = {};
+      if (current.exists) { try { config = JSON.parse(current.content); } catch(e){ config = {}; } }
+      const list = Array.isArray(config.discountCodes) ? config.discountCodes : [];
+      document.getElementById('discountCodesInput').value = list.map(c => c.code + '=' + c.percent).join('\n');
+      document.getElementById('codesStatus').className = 'status';
+    } catch (e) { setStatus('codesStatus', 'err', 'خطا: ' + errMsg(e)); }
+  });
+  document.getElementById('saveCodesBtn').addEventListener('click', async () => {
+    try {
+      validateCfg();
+      persistCfgIfNeeded();
+      const parsed = parseCodes(document.getElementById('discountCodesInput').value);
+      if (parsed.bad.length) { setStatus('codesStatus', 'err', 'این خط‌ها درست نیستن (درصد باید ۱ تا ۹۰ باشه):\n' + parsed.bad.join('\n')); return; }
+      setStatus('codesStatus', 'busy', 'در حال ذخیره تنظیمات...');
+      await saveConfigPatch({ discountCodes: parsed.list });
+      setStatus('codesStatus', 'ok', parsed.list.length ? ('کدها ذخیره شدن 🎉 (' + parsed.list.length + ' کد)') : 'همه کدها پاک شدن.');
+    } catch (e) { setStatus('codesStatus', 'err', 'خطا: ' + errMsg(e)); }
   });
 
   document.getElementById('loadSocialBtn').addEventListener('click', async () => {
@@ -1031,8 +1168,8 @@
         wrap.innerHTML = posts.map(p => `
           <div class="post-item">
             <div class="meta">
-              <b>${p.title}</b>
-              <span>${p.type === 'product' ? 'محصول' : p.type === 'showcase' ? 'کارت ویژه' : 'اطلاعیه'} ${p.price ? '· ' + Number(p.price).toLocaleString('fa-IR') + ' تومان' : ''}</span>
+              <b>${esc(p.title)}</b>
+              <span>${p.type === 'product' ? 'محصول' : p.type === 'showcase' ? 'کارت ویژه' : 'اطلاعیه'}${p.category ? ' · ' + esc(p.category) : ''}${p.soldOut ? ' · ناموجود' : ''}${p.bestseller ? ' · پرفروش' : ''} ${p.price ? '· ' + Number(p.price).toLocaleString('fa-IR') + ' تومان' : ''}</span>
             </div>
             <button class="edit-btn" data-id="${p.id}">ویرایش</button>
             <button class="del-btn" data-id="${p.id}">حذف</button>

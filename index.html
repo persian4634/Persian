@@ -615,7 +615,7 @@
 
   /* ---- Details modal ---- */
   .modal-overlay{
-    position:fixed;inset:0;z-index:90;
+    position:fixed;inset:0;z-index:120;
     display:flex;align-items:center;justify-content:center;
     padding:24px;
     background:rgba(10,8,12,0.45);
@@ -648,6 +648,125 @@
   .l-or{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:12px;margin:14px 0;}
   .l-or::before,.l-or::after{content:'';flex:1;height:1px;background:rgba(128,128,128,.25);}
   .l-avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;}
+  /* ---- Skeleton / sold-out / wishlist / badges ---- */
+  @keyframes shimmer{0%{background-position:100% 0;}100%{background-position:-100% 0;}}
+  .sk,.prod-media.sk{
+    background-image:linear-gradient(100deg,rgba(128,128,128,.14) 30%,rgba(128,128,128,.28) 50%,rgba(128,128,128,.14) 70%)!important;
+    background-size:200% 100%;animation:shimmer 1.3s linear infinite;background-color:transparent;
+  }
+  .sk-line{height:12px;border-radius:6px;margin:8px 0;}
+  .sk-card .prod-media{cursor:default;}
+  .prod-soldout .prod-media::after{content:'';position:absolute;inset:0;background:rgba(0,0,0,.42);z-index:1;}
+  .prod-soldout-tag{
+    position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:3;
+    background:rgba(20,20,22,.85);color:#fff;font-size:12px;font-weight:800;padding:7px 16px;border-radius:20px;white-space:nowrap;
+  }
+  .prod-soldout .prod-final{color:var(--muted);}
+  .prod-best{position:absolute;top:10px;left:10px;background:linear-gradient(135deg,#F4A52C,#E0731E);color:#fff;font-size:11px;font-weight:800;padding:4px 10px;border-radius:8px;z-index:2;}
+  .prod-ribbon ~ .prod-badge,.prod-ribbon ~ .prod-new,.prod-ribbon ~ .prod-best{top:32px;}
+  .wish-btn{
+    position:absolute;bottom:10px;right:10px;width:34px;height:34px;border-radius:50%;border:none;padding:0;z-index:4;
+    background:rgba(255,255,255,.88);display:flex;align-items:center;justify-content:center;cursor:pointer;
+    box-shadow:0 6px 14px -6px rgba(0,0,0,.45);
+  }
+  .wish-btn svg{width:17px;height:17px;stroke:#E53950;fill:none;stroke-width:2;stroke-linejoin:round;transition:transform .2s;}
+  .wish-btn.on svg{fill:#E53950;animation:storyHeartPop .45s ease;}
+  .wish-btn:active svg{transform:scale(.8);}
+  .prod-add{z-index:4;}
+  @keyframes cartBump{0%{transform:scale(1);}35%{transform:scale(1.35);}70%{transform:scale(.92);}100%{transform:scale(1);}}
+  .bump{animation:cartBump .5s ease;}
+  .prod-add.pop{animation:cartBump .45s ease;}
+  .toast-add{
+    position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom));transform:translate(-50%,12px);z-index:140;
+    background:rgba(28,28,30,.92);color:#fff;font-size:13px;font-weight:700;padding:10px 20px;border-radius:22px;
+    opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;white-space:nowrap;
+  }
+  .toast-add.show{opacity:1;transform:translate(-50%,0);}
+
+  /* ---- Product popup gallery / zoom / similar ---- */
+  .modal-card{max-height:90vh;overflow-y:auto;overscroll-behavior:contain;}
+  .m-gallery{position:relative;margin-bottom:16px;}
+  .m-slides{
+    display:flex;overflow-x:auto;scroll-snap-type:x mandatory;border-radius:18px;direction:ltr;
+    scrollbar-width:none;-webkit-overflow-scrolling:touch;background:rgba(128,128,128,.12);
+  }
+  .m-slides::-webkit-scrollbar{display:none;}
+  .m-slide{flex:0 0 100%;scroll-snap-align:center;height:260px;background-size:cover;background-position:center top;cursor:zoom-in;}
+  .m-dots{display:flex;justify-content:center;gap:6px;margin-top:10px;}
+  .m-dots i{width:7px;height:7px;border-radius:50%;background:rgba(128,128,128,.4);transition:width .25s,background .25s;}
+  .m-dots i.on{width:20px;border-radius:5px;background:var(--blue);}
+  .m-zoomhint{
+    position:absolute;top:12px;right:12px;background:rgba(0,0,0,.5);color:#fff;border-radius:14px;padding:4px 10px;font-size:11px;pointer-events:none;
+  }
+  .modal-wish{
+    position:absolute;top:20px;left:62px;width:32px;height:32px;border-radius:50%;border:none;padding:0;z-index:3;
+    background:#F3EAEA;display:flex;align-items:center;justify-content:center;cursor:pointer;
+  }
+  .modal-wish svg{width:15px;height:15px;stroke:#E53950;fill:none;stroke-width:2;stroke-linejoin:round;}
+  .modal-wish.on svg{fill:#E53950;}
+  #modalAddBtn{position:sticky;bottom:-4px;box-shadow:0 -12px 14px -4px var(--card);}
+  #modalAddBtn:disabled{opacity:.55;}
+  .similar-title{font-size:14px;font-weight:800;margin:20px 0 10px;}
+  .similar-row{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;padding-bottom:6px;}
+  .similar-row::-webkit-scrollbar{display:none;}
+  .sim-card{flex:0 0 108px;cursor:pointer;}
+  .sim-card .sim-img{height:108px;border-radius:14px;background-size:cover;background-position:center;background-color:#3a3a3a;margin-bottom:6px;}
+  .sim-card b{display:block;font-size:11.5px;font-weight:700;line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .sim-card span{font-size:11.5px;color:var(--green);font-weight:800;}
+  .zoom-ov{position:fixed;inset:0;z-index:150;background:rgba(0,0,0,.94);display:none;overflow:auto;-webkit-overflow-scrolling:touch;}
+  .zoom-ov.open{display:flex;}
+  .zoom-ov img{display:block;margin:auto;max-width:100%;max-height:100vh;object-fit:contain;cursor:zoom-in;}
+  .zoom-ov.zoomed{display:block;}
+  .zoom-ov.zoomed img{max-width:none;max-height:none;width:260%;margin:0;cursor:zoom-out;}
+  .zoom-close{position:fixed;top:calc(14px + env(safe-area-inset-top));left:14px;z-index:151;width:40px;height:40px;border-radius:50%;border:none;background:rgba(255,255,255,.22);display:none;align-items:center;justify-content:center;}
+  .zoom-ov.open ~ .zoom-close{display:flex;}
+  .zoom-close svg{width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2.4;}
+
+  /* ---- Cart coupon ---- */
+  .coupon-row{display:flex;gap:8px;margin-bottom:12px;}
+  .coupon-row input{flex:1;min-width:0;border:1px solid rgba(128,128,128,.28);border-radius:12px;padding:10px 12px;font-family:inherit;font-size:13px;background:var(--bg);color:var(--text);direction:ltr;text-align:left;text-transform:uppercase;}
+  .coupon-row input::placeholder{text-transform:none;direction:rtl;}
+  .coupon-row button{border:none;border-radius:12px;padding:0 16px;background:var(--blue);color:#fff;font-family:inherit;font-weight:700;font-size:13px;cursor:pointer;}
+  .coupon-msg{font-size:12px;min-height:16px;margin:-4px 2px 8px;color:var(--muted);}
+  .coupon-msg.ok{color:var(--green);}
+  .coupon-msg.err{color:#C0424D;}
+  .cart-sum-row{display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;color:var(--muted);}
+  .cart-sum-row.disc{color:var(--green);font-weight:700;}
+
+  /* ---- Category page search / sort ---- */
+  .cat-tools{display:flex;gap:8px;margin:10px 0 2px;}
+  .cat-search{flex:1;min-width:0;}
+  .cat-search input,.cat-sort{
+    width:100%;border:1px solid rgba(128,128,128,.25);border-radius:14px;padding:10px 14px;
+    font-family:inherit;font-size:13.5px;background:var(--bg);color:var(--text);outline:none;
+  }
+  .cat-search input:focus,.cat-sort:focus{border-color:var(--blue);}
+  .cat-sort{flex:0 0 auto;width:auto;max-width:44%;}
+
+  /* ---- Category page ---- */
+  .cat-page{
+    position:fixed;inset:0;z-index:96;background:var(--bg);overflow-y:auto;overscroll-behavior:contain;
+    visibility:hidden;opacity:0;transform:translateY(24px);
+    transition:opacity .3s ease,transform .3s ease,visibility 0s linear .3s;
+  }
+  .cat-page.open{visibility:visible;opacity:1;transform:none;transition-delay:0s;}
+  .cat-inner{max-width:var(--shell-w);margin:0 auto;padding:0 18px calc(40px + env(safe-area-inset-bottom));}
+  .cat-top{
+    position:sticky;top:0;z-index:5;margin:0 -18px;padding:calc(12px + env(safe-area-inset-top)) 18px 10px;
+    background:rgba(var(--card-rgb),.82);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  }
+  .cat-top-row{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
+  .cat-top-row h2{flex:1;margin:0;font-size:19px;font-weight:800;}
+  .cat-back{width:40px;height:40px;border-radius:50%;border:none;background:rgba(128,128,128,.16);display:flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto;}
+  .cat-back svg{width:18px;height:18px;stroke:var(--text);}
+  .cat-chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px;}
+  .cat-chips::-webkit-scrollbar{display:none;}
+  .cat-chip{flex:0 0 auto;border:none;border-radius:18px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;background:rgba(128,128,128,.14);color:var(--text);transition:background .2s,color .2s;}
+  .cat-chip.on{background:var(--blue);color:#fff;}
+  .cat-count{font-size:12.5px;color:var(--muted);margin:14px 2px 12px;}
+  .cat-empty{text-align:center;color:var(--muted);font-size:13.5px;line-height:2;padding:60px 10px;}
+  @media (min-width:900px){ .cat-inner{max-width:900px;} .cat-page .prod-grid{grid-template-columns:repeat(3,1fr);} }
+
   /* ---- Desktop ---- */
   @media (min-width:900px){
     :root{--shell-w:1100px;}
@@ -723,9 +842,12 @@
   </section>
 
   <!-- Products added from admin panel (loaded from data/posts.json) -->
-  <section class="section" id="liveProductsSection" style="display:none;">
+  <section class="section" id="liveProductsSection">
     <div class="prod-head"><h2>جدیدترین محصولات</h2></div>
-    <div class="prod-grid" id="liveProductsGrid"></div>
+    <div class="prod-grid" id="liveProductsGrid">
+      <div class="prod-card sk-card"><div class="prod-media sk"></div><div class="prod-body"><div class="sk sk-line" style="width:80%"></div><div class="sk sk-line" style="width:50%"></div></div></div>
+      <div class="prod-card sk-card"><div class="prod-media sk"></div><div class="prod-body"><div class="sk sk-line" style="width:70%"></div><div class="sk sk-line" style="width:45%"></div></div></div>
+    </div>
   </section>
 
   <!-- Big photo+description showcase cards added from admin panel -->
@@ -795,7 +917,7 @@
   </section>
 
   <nav class="bottom-nav">
-    <a href="#" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>دسته‌بندی</a>
+    <a href="#" class="nav-item" id="navCats"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>دسته‌بندی</a>
     <button class="nav-item" id="navAbout"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.2 2.4c-.8.3-1.2 1-1.2 1.8" /><circle cx="12" cy="16.3" r=".4" fill="var(--muted)" stroke="none"/></svg>درباره ما</button>
     <a href="#" class="nav-item center"><div class="fab"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/></svg></div>خانه<span class="underline"></span></a>
     <button class="nav-item" id="navCart" style="position:relative;">
@@ -889,6 +1011,13 @@
     </div>
     <div class="cart-items" id="cartItems"></div>
     <div class="cart-footer">
+      <div class="coupon-row" id="couponRow" style="display:none;">
+        <input type="text" id="couponInput" placeholder="کد تخفیف دارید؟" autocomplete="off" autocapitalize="characters" maxlength="24">
+        <button type="button" id="couponApply">اعمال</button>
+      </div>
+      <div class="coupon-msg" id="couponMsg"></div>
+      <div class="cart-sum-row" id="cartSubRow" style="display:none;"><span>جمع قبل از تخفیف</span><span id="cartSub"></span></div>
+      <div class="cart-sum-row disc" id="cartDiscRow" style="display:none;"><span id="cartDiscLabel">تخفیف</span><span id="cartDisc"></span></div>
       <div class="cart-total-row"><span>جمع کل</span><span id="cartTotal">۰ تومان</span></div>
       <button class="btn-checkout" id="checkoutBtn" disabled>تکمیل خرید و ارسال سفارش</button>
     </div>
@@ -901,7 +1030,8 @@
     <button class="modal-close" id="closeModal">
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2"><path d="M6 6l12 12M18 6L6 18"/></svg>
     </button>
-    <div class="modal-photo" id="modalPhoto" style="display:none;"></div>
+    <button class="modal-wish" id="modalWish" aria-label="علاقه‌مندی" style="display:none;"><svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.3 3 4.5 6.6 4.5c2 0 3.5 1 5.4 3 1.9-2 3.4-3 5.4-3 3.6 0 5.7 3.8 4.2 7.3C19.5 16.4 12 21 12 21z"/></svg></button>
+    <div class="m-gallery" id="modalPhoto" style="display:none;"></div>
     <div class="modal-top">
       <div class="modal-ico" id="modalIco"></div>
       <div>
@@ -911,9 +1041,15 @@
     </div>
     <p id="modalDesc"></p>
     <div class="prod-price-row" id="modalPriceRow" style="display:none;margin-top:14px;"></div>
+    <div id="modalSimilar" style="display:none;"></div>
     <button class="btn-checkout" id="modalAddBtn" style="display:none;margin-top:14px;">افزودن به سبد</button>
   </div>
 </div>
+
+<!-- Image zoom -->
+<div class="zoom-ov" id="zoomOv"><img id="zoomImg" alt=""></div>
+<button type="button" class="zoom-close" id="zoomClose" aria-label="بستن"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+<div class="toast-add" id="toastAdd"></div>
 
 <!-- About page (profile-style) -->
 <div class="about-overlay" id="aboutOverlay">
@@ -992,6 +1128,32 @@
     <input class="story-input" id="storyInput" type="text" placeholder="نظرت رو بنویس..." enterkeyhint="send" autocomplete="off" maxlength="300">
     <button type="button" class="story-act" id="storyLike" aria-label="لایک"><svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.3 3 4.5 6.6 4.5c2 0 3.5 1 5.4 3 1.9-2 3.4-3 5.4-3 3.6 0 5.7 3.800 4.200 7.300C19.500 16.400 12 21 12 21z"/></svg></button>
     <button type="button" class="story-act" id="storySend" aria-label="ارسال"><svg viewBox="0 0 24 24"><path d="M21 3L10 14M21 3l-7 18-4-7-7-4 18-7z"/></svg></button>
+  </div>
+</div>
+
+<!-- Category page -->
+<div class="cat-page" id="catPage" aria-hidden="true">
+  <div class="cat-inner">
+    <div class="cat-top">
+      <div class="cat-top-row">
+        <button type="button" class="cat-back" id="catBack" aria-label="بازگشت"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>
+        <h2 id="catTitle">دسته‌بندی‌ها</h2>
+      </div>
+      <div class="cat-chips" id="catChips"></div>
+      <div class="cat-tools">
+        <div class="cat-search"><input type="search" id="catSearch" placeholder="جستجو تو محصولات..." autocomplete="off" enterkeyhint="search"></div>
+        <select class="cat-sort" id="catSort" aria-label="مرتب‌سازی">
+          <option value="new">جدیدترین</option>
+          <option value="best">پرفروش‌ها</option>
+          <option value="cheap">ارزان‌ترین</option>
+          <option value="pricey">گران‌ترین</option>
+          <option value="disc">بیشترین تخفیف</option>
+        </select>
+      </div>
+    </div>
+    <div class="cat-count" id="catCount"></div>
+    <div class="prod-grid" id="catGrid"></div>
+    <div class="cat-empty" id="catEmpty" style="display:none;">هنوز محصولی تو این دسته اضافه نشده.</div>
   </div>
 </div>
 
@@ -1137,14 +1299,33 @@
   // Shared detail popup for both product cards and showcase cards: photo,
   // title, full description, price (if any) and an add-to-cart button.
   let currentModalItem = null;
+  const modalWish = document.getElementById('modalWish');
+  const modalSimilar = document.getElementById('modalSimilar');
+  function itemImages(post){
+    const list = [];
+    if (post.image) list.push(post.image);
+    if (Array.isArray(post.images)) post.images.forEach(u => { if (u && !list.includes(u)) list.push(u); });
+    return list;
+  }
   function openItemModal(post){
     currentModalItem = post;
-    if (post.image) {
+    const imgs = itemImages(post);
+    if (imgs.length) {
       modalPhoto.style.display = 'block';
-      modalPhoto.style.backgroundImage = `url('${encodeURI(post.image)}')`;
+      modalPhoto.innerHTML =
+        `<div class="m-slides">${imgs.map(u => `<div class="m-slide" data-zoom="${escapeHtml(u)}" style="background-image:url('${encodeURI(u)}')"></div>`).join('')}</div>` +
+        `<div class="m-zoomhint">برای بزرگ‌نمایی لمس کن</div>` +
+        (imgs.length > 1 ? `<div class="m-dots">${imgs.map((_, i) => `<i class="${i === 0 ? 'on' : ''}"></i>`).join('')}</div>` : '');
+      const slides = modalPhoto.querySelector('.m-slides');
+      slides.addEventListener('scroll', () => {
+        const idx = Math.round(slides.scrollLeft / Math.max(1, slides.clientWidth));
+        modalPhoto.querySelectorAll('.m-dots i').forEach((d, k) => d.classList.toggle('on', k === idx));
+      }, { passive: true });
+      slides.querySelectorAll('.m-slide').forEach(s => s.addEventListener('click', () => openZoom(s.dataset.zoom)));
       modalIco.style.display = 'none';
     } else {
       modalPhoto.style.display = 'none';
+      modalPhoto.innerHTML = '';
       modalIco.style.display = 'flex';
       modalIco.style.background = '#4C6FF0';
       modalIco.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M12 2l2.6 5.9L21 9l-4.8 4 1.4 6.4L12 16.7 6.4 19.4 7.8 13 3 9l6.4-1.1z"/></svg>';
@@ -1161,20 +1342,73 @@
       modalPriceRow.style.display = 'flex';
       modalPriceRow.innerHTML = (hasDiscount ? `<span class="prod-old">${formatToman(orig)}</span>` : '') + `<span class="prod-final">${formatToman(price)}</span>`;
       modalAddBtn.style.display = 'block';
+      modalAddBtn.disabled = !!post.soldOut;
+      modalAddBtn.textContent = post.soldOut ? 'ناموجود' : 'افزودن به سبد';
+      modalWish.style.display = 'flex';
+      modalWish.classList.toggle('on', isWished(post.id));
     } else {
       modalPriceRow.style.display = 'none';
       modalAddBtn.style.display = 'none';
+      modalWish.style.display = 'none';
     }
+    renderSimilar(post);
+    modalOverlay.querySelector('.modal-card').scrollTop = 0;
     modalOverlay.classList.add('open');
+  }
+  function renderSimilar(post){
+    const cat = (post.category || '').trim();
+    const sim = cat ? allShopItems.filter(p => p.id !== post.id && (p.category || '').trim() === cat).slice(0, 6) : [];
+    if (!sim.length) { modalSimilar.style.display = 'none'; modalSimilar.innerHTML = ''; return; }
+    modalSimilar.style.display = 'block';
+    modalSimilar.innerHTML = `<div class="similar-title">محصولات مشابه</div><div class="similar-row">${sim.map(p => `
+      <div class="sim-card" data-sim-id="${escapeHtml(p.id)}">
+        <div class="sim-img" style="${p.image ? `background-image:url('${encodeURI(p.image)}')` : ''}"></div>
+        <b>${escapeHtml(p.title)}</b>
+        ${Number(p.price) > 0 ? `<span>${formatToman(p.price)}</span>` : ''}
+      </div>`).join('')}</div>`;
+    modalSimilar.querySelectorAll('[data-sim-id]').forEach(el => el.addEventListener('click', () => {
+      const p = allShopItems.find(x => x.id === el.dataset.simId);
+      if (p) openItemModal(p);
+    }));
   }
   modalAddBtn.addEventListener('click', () => {
     if (currentModalItem) addToCart(currentModalItem);
   });
+  modalWish.addEventListener('click', () => { if (currentModalItem) toggleWish(currentModalItem.id); });
+
+  /* ---- Image zoom: tap to open, tap again to zoom in (scroll to pan) ---- */
+  const zoomOv = document.getElementById('zoomOv');
+  const zoomImg = document.getElementById('zoomImg');
+  function openZoom(url){
+    zoomImg.src = encodeURI(url);
+    zoomOv.classList.remove('zoomed');
+    zoomOv.classList.add('open');
+    zoomOv.scrollTop = 0; zoomOv.scrollLeft = 0;
+  }
+  function closeZoom(){ zoomOv.classList.remove('open', 'zoomed'); zoomImg.src = ''; }
+  zoomImg.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const zoomed = zoomOv.classList.toggle('zoomed');
+    if (zoomed) {
+      const r = zoomImg.getBoundingClientRect();
+      requestAnimationFrame(() => {
+        zoomOv.scrollLeft = (zoomOv.scrollWidth - zoomOv.clientWidth) / 2;
+        zoomOv.scrollTop = (zoomOv.scrollHeight - zoomOv.clientHeight) / 2;
+      });
+    }
+  });
+  zoomOv.addEventListener('click', (e) => { if (e.target === zoomOv) closeZoom(); });
+  document.getElementById('zoomClose').addEventListener('click', closeZoom);
 
   // Simple text-only modal (About us / Terms & return policy), reusing the
   // same popup used for product/showcase details.
   function openTextModal(title, text){
+    currentModalItem = null;
     modalPhoto.style.display = 'none';
+    modalPhoto.innerHTML = '';
+    modalWish.style.display = 'none';
+    modalSimilar.style.display = 'none';
+    modalSimilar.innerHTML = '';
     modalIco.style.display = 'none';
     modalEyebrow.textContent = '';
     modalTitle.textContent = title;
@@ -1442,11 +1676,49 @@
   function saveCart(){ try { localStorage.setItem('persianCart', JSON.stringify(cart)); } catch(e){} }
   function cartCount(){ return cart.reduce((n, i) => n + i.qty, 0); }
   function cartTotal(){ return cart.reduce((n, i) => n + i.qty * i.price, 0); }
+
+  /* ---- Discount codes (list comes from data/config.json → discountCodes) ---- */
+  let discountCodes = [];
+  let appliedCode = '';
+  try { appliedCode = localStorage.getItem('persianCoupon') || ''; } catch(e){}
+  function normCode(c){
+    return String(c || '').replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).trim().toUpperCase();
+  }
+  function activeDiscount(){
+    if (!appliedCode) return null;
+    const c = normCode(appliedCode);
+    return discountCodes.find(d => d.code === c) || null;
+  }
+  function cartDiscount(){ const d = activeDiscount(); return d ? Math.round(cartTotal() * d.percent / 100) : 0; }
+  function cartPayable(){ return cartTotal() - cartDiscount(); }
+
+  /* ---- Add-to-cart feedback ---- */
+  const toastAdd = document.getElementById('toastAdd');
+  let toastAddTimer = null;
+  function showAddToast(msg){
+    toastAdd.textContent = msg;
+    toastAdd.classList.add('show');
+    clearTimeout(toastAddTimer);
+    toastAddTimer = setTimeout(() => toastAdd.classList.remove('show'), 1800);
+  }
+  function bumpEl(el){
+    if (!el) return;
+    el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump');
+    setTimeout(() => el.classList.remove('bump'), 520);
+  }
+  function cartFeedback(){
+    bumpEl(document.getElementById('navCart'));
+    bumpEl(document.getElementById('cartBadge'));
+    try { if (navigator.vibrate) navigator.vibrate(25); } catch(e){}
+    showAddToast('✓ به سبد خرید اضافه شد');
+  }
   function addToCart(p){
+    if (p.soldOut) { showAddToast('این محصول فعلاً ناموجوده'); return; }
     const existing = cart.find(i => i.id === p.id);
     if (existing) { existing.qty += 1; }
     else { cart.push({ id: p.id, title: p.title, price: Number(p.price) || 0, image: p.image || '', qty: 1 }); }
     saveCart(); renderCartBadge(); renderCartItems();
+    cartFeedback();
   }
   function changeQty(id, delta){
     const item = cart.find(i => i.id === id);
@@ -1494,8 +1766,42 @@
       wrap.querySelectorAll('[data-qty-plus]').forEach(b => b.addEventListener('click', () => changeQty(b.dataset.qtyPlus, 1)));
       wrap.querySelectorAll('[data-remove]').forEach(b => b.addEventListener('click', () => removeFromCart(b.dataset.remove)));
     }
-    if (totalEl) totalEl.textContent = formatToman(cartTotal());
+    const disc = cartDiscount();
+    const d = activeDiscount();
+    document.getElementById('couponRow').style.display = discountCodes.length ? 'flex' : 'none';
+    document.getElementById('cartSubRow').style.display = disc > 0 ? 'flex' : 'none';
+    document.getElementById('cartDiscRow').style.display = disc > 0 ? 'flex' : 'none';
+    if (disc > 0) {
+      document.getElementById('cartSub').textContent = formatToman(cartTotal());
+      document.getElementById('cartDiscLabel').textContent = 'تخفیف (' + d.code + ' — ' + d.percent.toLocaleString('fa-IR') + '٪)';
+      document.getElementById('cartDisc').textContent = '− ' + formatToman(disc);
+    }
+    if (d) { setCouponMsg('کد «' + d.code + '» اعمال شد.', 'ok'); document.getElementById('couponInput').value = d.code; }
+    else if (appliedCode && discountCodes.length) { setCouponMsg('این کد دیگه معتبر نیست.', 'err'); }
+    if (totalEl) totalEl.textContent = formatToman(cartPayable());
   }
+  function setCouponMsg(msg, kind){
+    const el = document.getElementById('couponMsg');
+    el.textContent = msg || '';
+    el.className = 'coupon-msg' + (kind ? ' ' + kind : '');
+  }
+  document.getElementById('couponApply').addEventListener('click', () => {
+    const raw = document.getElementById('couponInput').value;
+    const code = normCode(raw);
+    if (!code) {
+      appliedCode = '';
+      try { localStorage.removeItem('persianCoupon'); } catch(e){}
+      setCouponMsg('کد تخفیف برداشته شد.', '');
+      renderCartItems();
+      return;
+    }
+    const found = discountCodes.find(x => x.code === code);
+    if (!found) { setCouponMsg('کد تخفیف معتبر نیست.', 'err'); return; }
+    appliedCode = code;
+    try { localStorage.setItem('persianCoupon', code); } catch(e){}
+    renderCartItems();
+  });
+  document.getElementById('couponInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); document.getElementById('couponApply').click(); } });
 
   const cartOverlay = document.getElementById('cartOverlay');
   function openCart(){ renderCartItems(); cartOverlay.classList.add('open'); }
@@ -1530,14 +1836,22 @@
     let msg = 'سلام، می‌خوام این سفارش رو ثبت کنم:\n\n';
     const _u = getUser(); if (_u) msg = 'سلام، من ' + _u.name + (_u.phone ? ' هستم (' + _u.phone + ').' : ' هستم.') + '\nمی‌خوام این سفارش رو ثبت کنم:\n\n';
     cart.forEach(item => { msg += `- ${item.title} × ${item.qty} = ${formatToman(item.price * item.qty)}\n`; });
+    const _d = activeDiscount(), _disc = cartDiscount();
     msg += `\nجمع کل: ${formatToman(cartTotal())}`;
+    if (_d && _disc > 0) {
+      msg += `\nکد تخفیف: ${_d.code} (${_d.percent}٪)`;
+      msg += `\nمبلغ تخفیف: ${formatToman(_disc)}`;
+      msg += `\nمبلغ قابل پرداخت: ${formatToman(cartPayable())}`;
+    }
     msg += `\nکد سفارش: ${orderCode}`;
     if (apiBase) {
       // ثبت سفارش روی سرور (بدون منتظر موندن)؛ اگه نشد، سفارش از طریق واتساپ هنوز می‌رسه
       apiPost('/api/orders', {
         id: orderCode,
         customer: { name: (_u && _u.name) || '', phone: (_u && _u.phone) || '', email: (_u && _u.email) || '' },
-        items: cart.map(i => ({ id: i.id, title: i.title, price: i.price, qty: i.qty }))
+        items: cart.map(i => ({ id: i.id, title: i.title, price: i.price, qty: i.qty })),
+        discountCode: (_d && _disc > 0) ? _d.code : '',
+        discountPercent: (_d && _disc > 0) ? _d.percent : 0
       }).catch(() => {});
     }
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
@@ -1867,11 +2181,225 @@
   heroWrap.addEventListener('touchcancel', () => { heroX0 = null; heroHold = false; }, {passive:true});
   renderHero(); // default slides; replaced below if admin-configured slides come in
 
+  /* ---- Product cards (shared by home grid + category page) ---- */
+  let allShopItems = [];
+  const NEW_DAYS = 14;
+  function postTime(p){ const t = Date.parse(p && p.date); return isNaN(t) ? 0 : t; }
+  function isNewPost(p){ const t = postTime(p); return !!t && (Date.now() - t) < NEW_DAYS * 86400000; }
+  const HEART_PATH = 'M12 21s-7.5-4.6-9.6-9.2C.9 8.3 3 4.5 6.6 4.5c2 0 3.5 1 5.4 3 1.9-2 3.4-3 5.4-3 3.6 0 5.7 3.8 4.2 7.3C19.5 16.4 12 21 12 21z';
+
+  /* wishlist (remembered on this device) */
+  let wishMemory = {};
+  try { wishMemory = JSON.parse(localStorage.getItem('persianWish') || '{}') || {}; } catch(e){ wishMemory = {}; }
+  function isWished(id){ return !!wishMemory[id]; }
+  function toggleWish(id){
+    id = String(id);
+    if (wishMemory[id]) delete wishMemory[id]; else wishMemory[id] = 1;
+    try { localStorage.setItem('persianWish', JSON.stringify(wishMemory)); } catch(e){}
+    document.querySelectorAll('[data-wish-id]').forEach(b => { if (b.dataset.wishId === id) b.classList.toggle('on', isWished(id)); });
+    if (currentModalItem && String(currentModalItem.id) === id) modalWish.classList.toggle('on', isWished(id));
+    showAddToast(isWished(id) ? '♥ به علاقه‌مندی‌ها اضافه شد' : 'از علاقه‌مندی‌ها حذف شد');
+    if (catOpen && currentCat === '__wish__') showCategory(currentCat);
+  }
+
+  function prodBadge(p, hasDiscount, pct){
+    if (hasDiscount) return `<div class="prod-badge">${pct}% تخفیف</div>`;
+    if (p.bestseller) return `<div class="prod-best">پرفروش</div>`;
+    if (isNewPost(p)) return `<div class="prod-new">جدید</div>`;
+    return '';
+  }
+  function prodCardHTML(p){
+    const price = Number(p.price) || 0;
+    const orig = Number(p.originalPrice) || 0;
+    const hasDiscount = orig > price && price > 0;
+    const pct = hasDiscount ? Math.round((1 - price / orig) * 100) : 0;
+    const sold = !!p.soldOut;
+    return `
+    <div class="prod-card${sold ? ' prod-soldout' : ''}">
+      <div class="prod-media${p.image ? ' sk' : ''}" data-open-id="${escapeHtml(p.id)}" data-img="${escapeHtml(p.image || '')}">
+        ${p.ribbon ? `<div class="prod-ribbon">${escapeHtml(p.ribbon)}</div>` : ''}
+        ${prodBadge(p, hasDiscount && !sold, pct)}
+        ${sold ? `<div class="prod-soldout-tag">ناموجود</div>` : ''}
+        ${price > 0 ? `<button class="wish-btn${isWished(p.id) ? ' on' : ''}" data-wish-id="${escapeHtml(p.id)}" aria-label="علاقه‌مندی"><svg viewBox="0 0 24 24"><path d="${HEART_PATH}"/></svg></button>` : ''}
+        ${price > 0 && !sold ? `<button class="prod-add" data-add-id="${escapeHtml(p.id)}" aria-label="افزودن به سبد">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
+        </button>` : ''}
+      </div>
+      <div class="prod-body">
+        <h4>${escapeHtml(p.title)}</h4>
+        <div class="prod-price-row">
+          ${hasDiscount ? `<span class="prod-old">${formatToman(orig)}</span>` : ''}
+          ${price > 0 ? `<span class="prod-final">${formatToman(price)}</span>` : ''}
+        </div>
+      </div>
+    </div>`;
+  }
+  function renderProdGrid(container, list){
+    container.innerHTML = list.map(prodCardHTML).join('');
+    // Shimmer placeholder until each photo has actually loaded
+    container.querySelectorAll('.prod-media.sk[data-img]').forEach(el => {
+      const u = encodeURI(el.dataset.img || '');
+      if (!u) { el.classList.remove('sk'); return; }
+      const im = new Image();
+      im.onload = () => { el.style.backgroundImage = `url('${u}')`; el.classList.remove('sk'); };
+      im.onerror = () => el.classList.remove('sk');
+      im.src = u;
+    });
+    container.querySelectorAll('[data-add-id]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const post = list.find(p => p.id === btn.dataset.addId);
+        if (!post) return;
+        btn.classList.remove('pop'); void btn.offsetWidth; btn.classList.add('pop');
+        addToCart(post);
+      });
+    });
+    container.querySelectorAll('[data-wish-id]').forEach(btn => {
+      btn.addEventListener('click', (e) => { e.stopPropagation(); toggleWish(btn.dataset.wishId); });
+    });
+    container.querySelectorAll('[data-open-id]').forEach(el => {
+      el.addEventListener('click', () => {
+        const post = list.find(p => p.id === el.dataset.openId);
+        if (post) openItemModal(post);
+      });
+    });
+  }
+
+  /* ---- Category page: categories + search + sort + wishlist ---- */
+  const BASE_CATEGORIES = ['بدلیجات', 'کش و کلیپس', 'عینک آفتابی', 'جاکلیدی'];
+  const catPage = document.getElementById('catPage');
+  const catChips = document.getElementById('catChips');
+  const catGrid = document.getElementById('catGrid');
+  const catEmpty = document.getElementById('catEmpty');
+  const catCount = document.getElementById('catCount');
+  const catTitle = document.getElementById('catTitle');
+  const catSearch = document.getElementById('catSearch');
+  const catSortEl = document.getElementById('catSort');
+  let catOpen = false, currentCat = '', catQuery = '', catSort = 'new';
+  function allCategories(){
+    const extra = [];
+    allShopItems.forEach(p => { const c = (p.category || '').trim(); if (c && !BASE_CATEGORIES.includes(c) && !extra.includes(c)) extra.push(c); });
+    return BASE_CATEGORIES.concat(extra);
+  }
+  function normText(s){
+    return String(s || '').toLowerCase()
+      .replace(/ي/g, 'ی').replace(/ك/g, 'ک')
+      .replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d))
+      .replace(/[ً-ٟـ]/g, '').replace(/‌/g, ' ');
+  }
+  function discPct(p){
+    const price = Number(p.price) || 0, orig = Number(p.originalPrice) || 0;
+    return (orig > price && price > 0) ? (1 - price / orig) : 0;
+  }
+  function sortItems(list){
+    const idx = new Map(list.map((p, i) => [p, i]));
+    const priceOrInf = (p, dir) => { const v = Number(p.price) || 0; return v > 0 ? v : (dir > 0 ? Infinity : -Infinity); };
+    const cmp = {
+      new:    (a, b) => postTime(b) - postTime(a),
+      best:   (a, b) => (b.bestseller ? 1 : 0) - (a.bestseller ? 1 : 0) || postTime(b) - postTime(a),
+      cheap:  (a, b) => priceOrInf(a, 1) - priceOrInf(b, 1),
+      pricey: (a, b) => (Number(b.price) || 0) - (Number(a.price) || 0),
+      disc:   (a, b) => discPct(b) - discPct(a)
+    }[catSort] || (() => 0);
+    return list.slice().sort((a, b) => ((a.soldOut ? 1 : 0) - (b.soldOut ? 1 : 0)) || cmp(a, b) || (idx.get(a) - idx.get(b)));
+  }
+  function showCategory(cat){
+    currentCat = cat || '';
+    let list;
+    if (currentCat === '__wish__') list = allShopItems.filter(p => isWished(p.id));
+    else if (currentCat) list = allShopItems.filter(p => (p.category || '').trim() === currentCat);
+    else list = allShopItems.slice();
+    const q = normText(catQuery).trim();
+    if (q) {
+      const tokens = q.split(/\s+/).filter(Boolean);
+      list = list.filter(p => { const hay = normText((p.title || '') + ' ' + (p.desc || '') + ' ' + (p.category || '')); return tokens.every(t => hay.includes(t)); });
+    }
+    list = sortItems(list);
+    const chips = [''].concat(allCategories()).concat(['__wish__']);
+    catChips.innerHTML = chips.map(c =>
+      `<button type="button" class="cat-chip${c === currentCat ? ' on' : ''}" data-cat="${escapeHtml(c)}">${c === '' ? 'همه' : c === '__wish__' ? '♥ علاقه‌مندی‌ها' : escapeHtml(c)}</button>`).join('');
+    catChips.querySelectorAll('.cat-chip').forEach(b => b.addEventListener('click', () => showCategory(b.dataset.cat)));
+    const active = catChips.querySelector('.cat-chip.on');
+    if (active && active.scrollIntoView) { try { active.scrollIntoView({ inline:'center', block:'nearest' }); } catch(e){} }
+    catTitle.textContent = currentCat === '__wish__' ? 'علاقه‌مندی‌ها' : (currentCat || 'همه محصولات');
+    renderProdGrid(catGrid, list);
+    catGrid.style.display = list.length ? '' : 'none';
+    catEmpty.style.display = list.length ? 'none' : 'block';
+    catEmpty.textContent = q ? 'محصولی با این جستجو پیدا نشد.' : currentCat === '__wish__' ? 'هنوز محصولی رو با قلب علامت نزدی.' : 'هنوز محصولی تو این دسته اضافه نشده.';
+    catCount.textContent = list.length ? list.length.toLocaleString('fa-IR') + ' محصول' : '';
+    catPage.scrollTop = 0;
+  }
+  let catSearchTimer = null;
+  catSearch.addEventListener('input', () => {
+    clearTimeout(catSearchTimer);
+    catSearchTimer = setTimeout(() => { catQuery = catSearch.value; showCategory(currentCat); }, 180);
+  });
+  catSortEl.addEventListener('change', () => { catSort = catSortEl.value; showCategory(currentCat); });
+  function openCategory(cat){
+    closeMenuFn();
+    catQuery = ''; catSearch.value = '';
+    showCategory(cat);
+    catPage.classList.add('open'); catPage.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+    heroHold = true;
+    if (!catOpen) { try { history.pushState({ cat: 1 }, ''); } catch(e){} }
+    catOpen = true;
+  }
+  function closeCategory(fromPop){
+    if (!catOpen) return;
+    catOpen = false;
+    catPage.classList.remove('open'); catPage.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+    heroHold = false;
+    if (!fromPop && history.state && history.state.cat) { try { history.back(); } catch(e){} }
+  }
+  window.addEventListener('popstate', () => { if (catOpen) closeCategory(true); });
+  document.getElementById('catBack').addEventListener('click', () => closeCategory());
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && catOpen && !detailOpen) closeCategory(); });
+  document.getElementById('navCats').addEventListener('click', e => { e.preventDefault(); openCategory(''); });
+
+  // Wire the drawer menu rows by their label; add rows for admin-created categories.
+  function buildCategoryMenu(){
+    const rows = Array.from(document.querySelectorAll('#menuOverlay .menu-list a.menu-row'));
+    let lastCatRow = null;
+    rows.forEach(r => {
+      const label = r.textContent.trim();
+      if (r.dataset.catWired) { if (BASE_CATEGORIES.includes(label)) lastCatRow = r; return; }
+      r.dataset.catWired = '1';
+      if (label === 'خانه') {
+        r.addEventListener('click', e => { e.preventDefault(); closeMenuFn(); closeCategory(); window.scrollTo({ top: 0, behavior: 'smooth' }); });
+      } else if (BASE_CATEGORIES.includes(label)) {
+        r.addEventListener('click', e => { e.preventDefault(); openCategory(label); });
+        lastCatRow = r;
+      }
+    });
+    if (lastCatRow) {
+      allCategories().filter(c => !BASE_CATEGORIES.includes(c)).forEach(c => {
+        if (document.querySelector(`#menuOverlay [data-extra-cat="${CSS.escape(c)}"]`)) return;
+        const row = lastCatRow.cloneNode(true);
+        row.dataset.extraCat = c;
+        row.querySelector('.menu-ico').style.background = '#3A3A3C';
+        const chev = row.querySelector('.chev');
+        row.textContent = '';
+        const ico = lastCatRow.querySelector('.menu-ico').cloneNode(true);
+        ico.style.background = '#3A3A3C';
+        ico.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="3"/></svg>';
+        row.appendChild(ico);
+        row.appendChild(document.createTextNode(c));
+        if (chev) row.appendChild(chev);
+        row.addEventListener('click', e => { e.preventDefault(); openCategory(c); });
+        lastCatRow.parentNode.insertBefore(row, lastCatRow.nextSibling);
+        lastCatRow = row;
+      });
+    }
+  }
+  buildCategoryMenu(); // base rows work even before posts.json loads
+
   /* ---- Load posts (products / announcements / showcase cards) added from admin.html ---- */
   fetch('data/posts.json', {cache:'no-store'})
     .then(r => r.ok ? r.json() : [])
     .then(posts => {
-      if (!Array.isArray(posts) || !posts.length) return;
+      if (!Array.isArray(posts) || !posts.length) { document.getElementById('liveProductsSection').style.display = 'none'; return; }
       const products = posts.filter(p => p.type === 'product');
       const announcements = posts.filter(p => p.type === 'announcement');
       const showcases = posts.filter(p => p.type === 'showcase');
@@ -1888,44 +2416,14 @@
           </div>`).join('');
       }
 
+      allShopItems = products.concat(showcases);
+      buildCategoryMenu();
+
       if (products.length) {
         document.getElementById('liveProductsSection').style.display = 'block';
-        document.getElementById('liveProductsGrid').innerHTML = products.map(p => {
-          const price = Number(p.price) || 0;
-          const orig = Number(p.originalPrice) || 0;
-          const hasDiscount = orig > price && price > 0;
-          const pct = hasDiscount ? Math.round((1 - price / orig) * 100) : 0;
-          return `
-          <div class="prod-card">
-            <div class="prod-media" data-open-id="${escapeHtml(p.id)}" style="${p.image ? `background-image:url('${encodeURI(p.image)}')` : ''}">
-              ${hasDiscount ? `<div class="prod-badge">${pct}% تخفیف</div>` : `<div class="prod-new">جدید</div>`}
-              ${p.ribbon ? `<div class="prod-ribbon">${escapeHtml(p.ribbon)}</div>` : ''}
-              <button class="prod-add" data-add-id="${escapeHtml(p.id)}" aria-label="افزودن به سبد">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
-              </button>
-            </div>
-            <div class="prod-body">
-              <h4>${escapeHtml(p.title)}</h4>
-              <div class="prod-price-row">
-                ${hasDiscount ? `<span class="prod-old">${formatToman(orig)}</span>` : ''}
-                <span class="prod-final">${formatToman(price)}</span>
-              </div>
-            </div>
-          </div>`;
-        }).join('');
-        document.querySelectorAll('[data-add-id]').forEach(btn => {
-          btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const post = products.find(p => p.id === btn.dataset.addId);
-            if (post) addToCart(post);
-          });
-        });
-        document.querySelectorAll('#liveProductsGrid [data-open-id]').forEach(el => {
-          el.addEventListener('click', () => {
-            const post = products.find(p => p.id === el.dataset.openId);
-            if (post) openItemModal(post);
-          });
-        });
+        renderProdGrid(document.getElementById('liveProductsGrid'), products);
+      } else {
+        document.getElementById('liveProductsSection').style.display = 'none';
       }
 
       if (showcases.length) {
@@ -1951,7 +2449,9 @@
                 <button class="fill-btn" data-showcase-id="${escapeHtml(s.id)}">توضیحات
                   <svg viewBox="0 0 24 24" fill="none" stroke-width="2.4"><path d="M9 6l6 6-6 6"/></svg>
                 </button>
-                ${price > 0 ? `<button class="fill-btn" style="background:var(--green);" data-showcase-add="${escapeHtml(s.id)}">افزودن به سبد</button>` : ''}
+                ${price > 0 ? (s.soldOut
+                  ? `<button class="fill-btn" style="background:#8A8A8E;" disabled>ناموجود</button>`
+                  : `<button class="fill-btn" style="background:var(--green);" data-showcase-add="${escapeHtml(s.id)}">افزودن به سبد</button>`) : ''}
               </div>
             </div>
           </div>`;
@@ -1970,7 +2470,7 @@
         });
       }
     })
-    .catch(() => {});
+    .catch(() => { document.getElementById('liveProductsSection').style.display = 'none'; });
 
   /* ---- Load appearance settings (menu photo / header slides) set from admin.html ---- */
   fetch('data/config.json', {cache:'no-store'})
@@ -2002,6 +2502,12 @@
         if (aboutAvatarIcon) { aboutAvatarIcon.style.display = 'none'; }
       }
       if (cfg.whatsapp) { shopWhatsapp = cfg.whatsapp; }
+      if (Array.isArray(cfg.discountCodes)) {
+        discountCodes = cfg.discountCodes
+          .map(c => ({ code: normCode(c && c.code), percent: Number(c && c.percent) || 0 }))
+          .filter(c => c.code && c.percent >= 1 && c.percent <= 90);
+        renderCartItems();
+      }
       if (cfg.commentsKey) { commentsKey = cfg.commentsKey; }
       if (cfg.apiBase) { apiBase = String(cfg.apiBase).trim(); }
       if (cfg.googleClientId) { googleClientId = String(cfg.googleClientId).trim(); }
