@@ -201,7 +201,11 @@
     "originalPrice": 535000,
     "ribbon": "تخفیف ۱۷٪",
     "eyebrow": "",
-    "image": "images/1790359422260-1000126862.jpg"
+    "image": "images/1790359422260-1000126862.jpg",
+    "category": "گردنبند",
+    "soldOut": false,
+    "bestseller": false,
+    "images": []
   },
   {
     "id": "1790237607174",
