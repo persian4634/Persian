@@ -221,7 +221,11 @@
     "originalPrice": 153000,
     "ribbon": "تخفیف ۷٪",
     "eyebrow": "",
-    "image": "images/1790235606353-1000126626.png"
+    "image": "images/1790235606353-1000126626.png",
+    "category": "عینک آفتابی",
+    "soldOut": false,
+    "bestseller": false,
+    "images": []
   },
   {
     "id": "1790234360499",
