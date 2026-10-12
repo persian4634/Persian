@@ -293,7 +293,11 @@
     "originalPrice": 1114000,
     "ribbon": "تخفیف ۱۳٪",
     "eyebrow": "",
-    "image": "images/1790153465586-1000126460.png"
+    "image": "images/1790153465586-1000126460.png",
+    "category": "نیم ست",
+    "soldOut": false,
+    "bestseller": false,
+    "images": []
   },
   {
     "id": "1790153140752",
