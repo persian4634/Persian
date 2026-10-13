@@ -80,8 +80,11 @@
   <div class="card">
     <h2>ورود به پنل</h2>
     <div id="loginView">
-      <label>آدرس بک‌اند</label>
-      <input type="text" id="cfgApi" dir="ltr" placeholder="https://your-app.runflare.run">
+      <p class="help" id="apiKnown" style="margin-top:0;display:none;">اتصال به سرور: <span id="apiShown" dir="ltr"></span> · <a href="#" id="apiChange">تغییر آدرس</a></p>
+      <div id="apiRow">
+        <label>آدرس بک‌اند</label>
+        <input type="text" id="cfgApi" dir="ltr" placeholder="https://your-app.runflare.cloud">
+      </div>
       <label>رمز ادمین</label>
       <input type="password" id="cfgPass" placeholder="رمزی که روی سرور تنظیم کردید" autocomplete="current-password">
       <button class="btn btn-primary" id="loginBtn">ورود</button>
@@ -394,17 +397,48 @@
     return res;
   }
 
+  // آدرس بک‌اند خودکار از تنظیمات سایت (data/config.json) خونده می‌شه؛ لازم نیست هر بار تایپ بشه
+  let siteApi = '';
+  function showApiRow(show){
+    document.getElementById('apiRow').style.display = show ? '' : 'none';
+    const known = !show && !!apiBase();
+    document.getElementById('apiKnown').style.display = known ? '' : 'none';
+    document.getElementById('apiShown').textContent = apiBase();
+  }
+  document.getElementById('apiChange').addEventListener('click', e => { e.preventDefault(); showApiRow(true); els.api.focus(); });
+  const apiReady = (async function(){
+    try {
+      const r = await fetch('data/config.json?t=' + Date.now(), { cache: 'no-store' });
+      if (r.ok) { const j = await r.json(); siteApi = String(j.apiBase || '').trim().replace(/\/+$/, ''); }
+    } catch(e){}
+    // آدرس ثبت‌شده تو سایت جدیدتر و معتبرتر از آدرس یادمونده تو مرورگره
+    if (siteApi) els.api.value = siteApi;
+    showApiRow(!apiBase());
+  })();
+
+  async function tryLogin(base, password){
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), 25000);
+    try {
+      return await fetch(base + '/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password }), signal: ctl.signal });
+    } finally { clearTimeout(timer); }
+  }
+
   async function doLogin(){
     const st = document.getElementById('authStatus');
     try {
+      await apiReady;
       const base = apiBase();
-      if (!/^https?:\/\//.test(base)) throw new Error('آدرس بک‌اند باید با https:// شروع بشه.');
+      if (!base) { showApiRow(true); throw new Error('آدرس بک‌اند ثبت نشده؛ یه‌بار آدرس رو وارد کنید.'); }
+      if (!/^https?:\/\//.test(base)) { showApiRow(true); throw new Error('آدرس بک‌اند باید با https:// شروع بشه.'); }
       if (!els.pass.value) throw new Error('رمز ادمین رو وارد کنید.');
       setStatus('authStatus', 'busy', 'در حال ورود...');
       let res;
-      try {
-        res = await fetch(base + '/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: els.pass.value }) });
-      } catch(e) { throw new Error('به سرور وصل نشد. آدرس بک‌اند یا اینترنت رو چک کنید.'); }
+      try { res = await tryLogin(base, els.pass.value); }
+      catch(e) {
+        showApiRow(true);
+        throw new Error('به سرور وصل نشد. دو دلیل رایج: ۱) آدرس بک‌اند عوض شده (بعد از ری‌استارت رانفلر آدرس موقت تغییر می‌کنه) ← آدرس جدید رو بالا وارد کنید. ۲) روی سرور ALLOWED_ORIGINS برابر * یا آدرس سایت نیست.');
+      }
       const j = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(j.error || ('خطا (' + res.status + ')'));
       adminToken = j.token;
@@ -413,6 +447,12 @@
       persistCfgIfNeeded();
       setAuthed(true);
       st.className = 'status';
+      showApiRow(false);
+      // اگه آدرس با چیزی که تو سایت ثبت شده فرق داره، خودکار تو سایت به‌روز می‌شه
+      if (base !== siteApi) {
+        try { await saveConfigPatch({ apiBase: base }); siteApi = base; setStatus('authStatus', 'ok', 'وارد شدید ✅ و آدرس جدید بک‌اند خودکار تو سایت ذخیره شد.'); }
+        catch(e) { setStatus('authStatus', 'err', 'وارد شدید، ولی ذخیره‌ی آدرس تو سایت نشد: ' + errMsg(e) + ' (دکمه‌ی «ذخیره آدرس بک‌اند تو سایت» رو بزنید)'); }
+      }
     } catch(e) { setStatus('authStatus', 'err', errMsg(e)); }
   }
   document.getElementById('loginBtn').addEventListener('click', doLogin);
