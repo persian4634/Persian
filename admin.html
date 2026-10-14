@@ -80,15 +80,10 @@
   <div class="card">
     <h2>ورود به پنل</h2>
     <div id="loginView">
-      <p class="help" id="apiKnown" style="margin-top:0;display:none;">اتصال به سرور: <span id="apiShown" dir="ltr"></span> · <a href="#" id="apiChange">تغییر آدرس</a></p>
-      <div id="apiRow">
-        <label>آدرس بک‌اند</label>
-        <input type="text" id="cfgApi" dir="ltr" placeholder="https://your-app.runflare.cloud">
-      </div>
       <label>رمز ادمین</label>
-      <input type="password" id="cfgPass" placeholder="رمزی که روی سرور تنظیم کردید" autocomplete="current-password">
+      <input type="password" id="cfgPass" placeholder="رمز ادمین رو وارد کنید" autocomplete="current-password">
       <button class="btn btn-primary" id="loginBtn">ورود</button>
-      <p class="help">دیگه توکن گیت‌هاب تو مرورگر نگه داشته نمی‌شه؛ توکن فقط روی سرور هست و با رمز ادمین وارد می‌شید. ورود شما با بستن تب خودکار تموم می‌شه.</p>
+      <p class="help">آدرس سرور خودکار از تنظیمات سایت گرفته می‌شه. ورود شما با بستن تب خودکار تموم می‌شه.</p>
     </div>
     <div id="sessionView" style="display:none;">
       <p class="help" style="margin-top:0;">وارد شدید ✅</p>
@@ -97,8 +92,9 @@
       <button class="btn btn-danger" id="logoutBtn">خروج</button>
     </div>
     <div class="status" id="authStatus"></div>
-    <details class="adv">
+    <details class="adv" id="advBox">
       <summary>تنظیمات ریپازیتوری (پیشرفته)</summary>
+      <input type="hidden" id="cfgApi">
       <label>نام کاربری گیت‌هاب (owner)</label>
       <input type="text" id="cfgOwner" value="persian4634">
       <div class="row2">
@@ -397,62 +393,60 @@
     return res;
   }
 
-  // آدرس بک‌اند خودکار از تنظیمات سایت (data/config.json) خونده می‌شه؛ لازم نیست هر بار تایپ بشه
-  let siteApi = '';
-  function showApiRow(show){
-    document.getElementById('apiRow').style.display = show ? '' : 'none';
-    const known = !show && !!apiBase();
-    document.getElementById('apiKnown').style.display = known ? '' : 'none';
-    document.getElementById('apiShown').textContent = apiBase();
-  }
-  document.getElementById('apiChange').addEventListener('click', e => { e.preventDefault(); showApiRow(true); els.api.focus(); });
-  const apiReady = (async function(){
+  // آدرس بک‌اندی که خود سایت استفاده می‌کنه (data/config.json → apiBase)
+  // اگه خواستی آدرس سرور رو ثابت تو همین فایل بذاری، اینجا بنویس (اختیاریه)
+  const DEFAULT_API = 'https://persian-api-kl3-persian-backend.runflare.cloud';
+  let siteApiBase = '';
+  const siteApiReady = (async () => {
     try {
-      const r = await fetch('data/config.json?t=' + Date.now(), { cache: 'no-store' });
-      if (r.ok) { const j = await r.json(); siteApi = String(j.apiBase || '').trim().replace(/\/+$/, ''); }
+      const r = await fetch(new URL('data/config.json', location.href).href + '?t=' + Date.now(), { cache: 'no-store' });
+      if (!r.ok) return;
+      const c = await r.json();
+      if (c && c.apiBase) {
+        siteApiBase = String(c.apiBase).trim().replace(/\/+$/, '');
+        els.api.value = siteApiBase;
+      }
     } catch(e){}
-    // آدرس ثبت‌شده تو سایت جدیدتر و معتبرتر از آدرس یادمونده تو مرورگره
-    if (siteApi) els.api.value = siteApi;
-    showApiRow(!apiBase());
   })();
-
-  async function tryLogin(base, password){
-    const ctl = new AbortController();
-    const timer = setTimeout(() => ctl.abort(), 25000);
-    try {
-      return await fetch(base + '/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password }), signal: ctl.signal });
-    } finally { clearTimeout(timer); }
-  }
 
   async function doLogin(){
     const st = document.getElementById('authStatus');
     try {
-      await apiReady;
-      const base = apiBase();
-      if (!base) { showApiRow(true); throw new Error('آدرس بک‌اند ثبت نشده؛ یه‌بار آدرس رو وارد کنید.'); }
-      if (!/^https?:\/\//.test(base)) { showApiRow(true); throw new Error('آدرس بک‌اند باید با https:// شروع بشه.'); }
       if (!els.pass.value) throw new Error('رمز ادمین رو وارد کنید.');
       setStatus('authStatus', 'busy', 'در حال ورود...');
-      let res;
-      try { res = await tryLogin(base, els.pass.value); }
-      catch(e) {
-        showApiRow(true);
-        throw new Error('به سرور وصل نشد. دو دلیل رایج: ۱) آدرس بک‌اند عوض شده (بعد از ری‌استارت رانفلر آدرس موقت تغییر می‌کنه) ← آدرس جدید رو بالا وارد کنید. ۲) روی سرور ALLOWED_ORIGINS برابر * یا آدرس سایت نیست.');
+      await siteApiReady;
+      // اولویت: آدرس دستی (اگه تو بخش پیشرفته عوض شده)، بعد آدرس تنظیمات سایت، بعد آدرس ذخیره‌شده
+      const manual = apiBase();
+      const candidates = [];
+      [siteApiBase, DEFAULT_API, manual].forEach(u => {
+        u = String(u || '').trim().replace(/\/+$/, '');
+        if (/^https?:\/\//.test(u) && !candidates.includes(u)) candidates.push(u);
+      });
+      if (!candidates.length) {
+        throw new Error('آدرس سرور پیدا نشد. باید تو فایل data/config.json سایت، کلید apiBase تنظیم شده باشه.');
+      }
+      let res = null, usedBase = '';
+      for (const base of candidates) {
+        try {
+          const r = await fetch(base + '/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: els.pass.value }) });
+          // آدرس قدیمی/مرده معمولاً ۴۰۴ یا خطای ۵xx می‌ده؛ برو سراغ آدرس بعدی
+          if (r.status === 404 || r.status >= 500) continue;
+          res = r; usedBase = base;
+          break;
+        } catch(e) { res = null; }
+      }
+      if (!res) {
+        throw new Error('به سرور وصل نشد. مطمئن شید سرور روشنه و اینترنت وصله.');
       }
       const j = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(j.error || ('خطا (' + res.status + ')'));
+      if (!res.ok) throw new Error(j.error || (res.status === 401 ? 'رمز اشتباهه.' : 'خطا (' + res.status + ')'));
       adminToken = j.token;
       try { sessionStorage.setItem('persianAdminToken', adminToken); } catch(e){}
+      els.api.value = usedBase;
       els.pass.value = '';
       persistCfgIfNeeded();
       setAuthed(true);
       st.className = 'status';
-      showApiRow(false);
-      // اگه آدرس با چیزی که تو سایت ثبت شده فرق داره، خودکار تو سایت به‌روز می‌شه
-      if (base !== siteApi) {
-        try { await saveConfigPatch({ apiBase: base }); siteApi = base; setStatus('authStatus', 'ok', 'وارد شدید ✅ و آدرس جدید بک‌اند خودکار تو سایت ذخیره شد.'); }
-        catch(e) { setStatus('authStatus', 'err', 'وارد شدید، ولی ذخیره‌ی آدرس تو سایت نشد: ' + errMsg(e) + ' (دکمه‌ی «ذخیره آدرس بک‌اند تو سایت» رو بزنید)'); }
-      }
     } catch(e) { setStatus('authStatus', 'err', errMsg(e)); }
   }
   document.getElementById('loginBtn').addEventListener('click', doLogin);
@@ -1272,7 +1266,9 @@
         <div class="top"><b>#${esc(o.id)}</b><span class="when">${esc(fmtDate(o.createdAt))}</span></div>
         <div>${o.customer && o.customer.name ? esc(o.customer.name) : 'بدون نام'}${o.customer && o.customer.phone ? ' · <a class="small" href="tel:' + esc(o.customer.phone) + '">' + esc(o.customer.phone) + '</a>' : ''}</div>
         <div class="items">${o.items.map(i => esc(i.title) + ' × ' + i.qty + ' = ' + esc(fmtToman(i.price * i.qty))).join('\n')}</div>
-        <div><b>جمع: ${esc(fmtToman(o.total))}</b></div>
+        ${o.discount > 0
+          ? `<div>جمع: ${esc(fmtToman(o.total))}</div><div>کد تخفیف <b>${esc(o.discountCode)}</b> (${esc(String(o.discountPercent))}٪): − ${esc(fmtToman(o.discount))}</div><div><b>قابل پرداخت: ${esc(fmtToman(o.payable))}</b></div>`
+          : `<div><b>جمع: ${esc(fmtToman(o.total))}</b></div>`}
         <div class="row">
           <select data-oid="${esc(o.id)}">${Object.keys(STATUS_FA).map(k => `<option value="${k}"${o.status === k ? ' selected' : ''}>${STATUS_FA[k]}</option>`).join('')}</select>
           <button class="del-btn" data-del-order="${esc(o.id)}">حذف</button>
