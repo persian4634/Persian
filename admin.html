@@ -80,8 +80,10 @@
   <div class="card">
     <h2>ورود به پنل</h2>
     <div id="loginView">
-      <label>رمز ادمین</label>
-      <input type="password" id="cfgPass" placeholder="رمز ادمین رو وارد کنید" autocomplete="current-password">
+      <label>نام کاربری</label>
+      <input type="text" id="cfgUser" dir="ltr" placeholder="نام کاربری" autocomplete="username" autocapitalize="none" autocorrect="off">
+      <label>رمز عبور</label>
+      <input type="password" id="cfgPass" placeholder="رمز عبور" autocomplete="current-password">
       <button class="btn btn-primary" id="loginBtn">ورود</button>
       <p class="help">آدرس سرور خودکار از تنظیمات سایت گرفته می‌شه. ورود شما با بستن تب خودکار تموم می‌شه.</p>
     </div>
@@ -333,6 +335,7 @@
     repo: document.getElementById('cfgRepo'),
     branch: document.getElementById('cfgBranch'),
     api: document.getElementById('cfgApi'),
+    user: document.getElementById('cfgUser'),
     pass: document.getElementById('cfgPass'),
   };
   let adminToken = '';
@@ -370,7 +373,7 @@
   }
   function validateCfg(){
     const c = cfg();
-    if (!c.api || !c.token) { throw new Error('اول وارد پنل بشید (آدرس بک‌اند و رمز ادمین).'); }
+    if (!c.api || !c.token) { throw new Error('اول وارد پنل بشید (نام کاربری و رمز عبور).'); }
     return c;
   }
   function setAuthed(on){
@@ -395,7 +398,7 @@
 
   // آدرس بک‌اندی که خود سایت استفاده می‌کنه (data/config.json → apiBase)
   // اگه خواستی آدرس سرور رو ثابت تو همین فایل بذاری، اینجا بنویس (اختیاریه)
-  const DEFAULT_API = 'https://persian-api-kl3-persian-backend.runflare.cloud';
+  const DEFAULT_API = '';
   let siteApiBase = '';
   const siteApiReady = (async () => {
     try {
@@ -412,7 +415,8 @@
   async function doLogin(){
     const st = document.getElementById('authStatus');
     try {
-      if (!els.pass.value) throw new Error('رمز ادمین رو وارد کنید.');
+      if (!els.user.value.trim()) throw new Error('نام کاربری رو وارد کنید.');
+      if (!els.pass.value) throw new Error('رمز عبور رو وارد کنید.');
       setStatus('authStatus', 'busy', 'در حال ورود...');
       await siteApiReady;
       // اولویت: آدرس دستی (اگه تو بخش پیشرفته عوض شده)، بعد آدرس تنظیمات سایت، بعد آدرس ذخیره‌شده
@@ -428,7 +432,7 @@
       let res = null, usedBase = '';
       for (const base of candidates) {
         try {
-          const r = await fetch(base + '/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: els.pass.value }) });
+          const r = await fetch(base + '/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: els.user.value.trim(), password: els.pass.value }) });
           // آدرس قدیمی/مرده معمولاً ۴۰۴ یا خطای ۵xx می‌ده؛ برو سراغ آدرس بعدی
           if (r.status === 404 || r.status >= 500) continue;
           res = r; usedBase = base;
@@ -451,6 +455,7 @@
   }
   document.getElementById('loginBtn').addEventListener('click', doLogin);
   els.pass.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+  els.user.addEventListener('keydown', e => { if (e.key === 'Enter') els.pass.focus(); });
   document.getElementById('logoutBtn').addEventListener('click', () => { setAuthed(false); document.getElementById('authStatus').className = 'status'; });
 
   // ---------- Base64 helpers (UTF-8 safe) ----------
