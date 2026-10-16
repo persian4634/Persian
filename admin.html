@@ -80,17 +80,15 @@
   <div class="card">
     <h2>ورود به پنل</h2>
     <div id="loginView">
-      <label>نام کاربری</label>
-      <input type="text" id="cfgUser" dir="ltr" placeholder="نام کاربری" autocomplete="username" autocapitalize="none" autocorrect="off">
-      <label>رمز عبور</label>
-      <input type="password" id="cfgPass" placeholder="رمز عبور" autocomplete="current-password">
+      <label>توکن گیت‌هاب</label>
+      <input type="password" id="cfgPass" dir="ltr" placeholder="github_pat_..." autocomplete="off" autocapitalize="none" autocorrect="off">
       <button class="btn btn-primary" id="loginBtn">ورود</button>
-      <p class="help">آدرس سرور خودکار از تنظیمات سایت گرفته می‌شه. ورود شما با بستن تب خودکار تموم می‌شه.</p>
+      <p class="help">توکن فقط تو همین تب نگه داشته می‌شه و با بستن تب پاک می‌شه. بدون سرور و مستقیم به گیت‌هاب وصل می‌شه.</p>
     </div>
     <div id="sessionView" style="display:none;">
       <p class="help" style="margin-top:0;">وارد شدید ✅</p>
-      <button class="btn btn-secondary" id="saveApiBtn">ذخیره آدرس بک‌اند تو سایت</button>
-      <p class="help">یه‌بار این دکمه رو بزنید تا سایت بدونه سفارش‌ها، لایک‌ها و نظرات رو به کجا بفرسته.</p>
+      <button class="btn btn-secondary" id="saveApiBtn">قطع اتصال سایت از بک‌اند</button>
+      <p class="help">اگه قبلاً آدرس بک‌اند تو تنظیمات سایت ثبت شده، با یه‌بار زدن این دکمه پاک می‌شه و سایت مثل قبل کار می‌کنه (سفارش از واتساپ، نظرها با web3forms).</p>
       <button class="btn btn-danger" id="logoutBtn">خروج</button>
     </div>
     <div class="status" id="authStatus"></div>
@@ -109,7 +107,7 @@
           <input type="text" id="cfgBranch" value="main">
         </div>
       </div>
-      <p class="help">این‌ها فقط برای نمایش پیش‌نمایش عکس‌ها لازمه. ریپازیتوری واقعی که تغییرات توش نوشته می‌شه رو متغیر CONTENT_REPO روی سرور تعیین می‌کنه.</p>
+      <p class="help">ریپوی سایت که تغییرات توش ذخیره می‌شه. معمولاً دست نزن (persian4634 / Persian / main).</p>
     </details>
   </div>
 
@@ -117,7 +115,7 @@
     <div class="tab active" data-tab="post">افزودن پست</div>
     <div class="tab" data-tab="look">عکس منو/هدر</div>
     <div class="tab" data-tab="list">لیست و حذف</div>
-    <div class="tab" data-tab="orders">سفارش‌ها</div>
+    <div class="tab" data-tab="orders" style="display:none;">سفارش‌ها</div>
   </div>
 
   <!-- Add post -->
@@ -335,11 +333,10 @@
     repo: document.getElementById('cfgRepo'),
     branch: document.getElementById('cfgBranch'),
     api: document.getElementById('cfgApi'),
-    user: document.getElementById('cfgUser'),
     pass: document.getElementById('cfgPass'),
   };
   let adminToken = '';
-  try { adminToken = sessionStorage.getItem('persianAdminToken') || ''; } catch(e){}
+  try { adminToken = sessionStorage.getItem('persianGhToken') || ''; sessionStorage.removeItem('persianAdminToken'); } catch(e){}
 
   (function loadSaved(){
     try {
@@ -373,89 +370,69 @@
   }
   function validateCfg(){
     const c = cfg();
-    if (!c.api || !c.token) { throw new Error('اول وارد پنل بشید (نام کاربری و رمز عبور).'); }
+    if (!c.token) { throw new Error('اول با توکن گیت‌هاب وارد پنل بشید.'); }
+    if (!c.owner || !c.repo) { throw new Error('نام کاربری و ریپوی گیت‌هاب تو تنظیمات پیشرفته خالیه.'); }
     return c;
   }
   function setAuthed(on){
     document.body.classList.toggle('authed', !!on);
     document.getElementById('loginView').style.display = on ? 'none' : '';
     document.getElementById('sessionView').style.display = on ? '' : 'none';
-    if (!on) { adminToken = ''; try { sessionStorage.removeItem('persianAdminToken'); } catch(e){} }
+    if (!on) { adminToken = ''; try { sessionStorage.removeItem('persianGhToken'); } catch(e){} }
   }
-  setAuthed(!!(adminToken && apiBase()));
+  setAuthed(!!adminToken);
 
-  async function apiFetch(path, opts){
-    const c = validateCfg();
+  // ---------- ارتباط مستقیم با گیت‌هاب (بدون سرور) ----------
+  const GH_API = 'https://api.github.com';
+  function ghRepoUrl(){
+    const c = cfg();
+    return GH_API + '/repos/' + encodeURIComponent(c.owner) + '/' + encodeURIComponent(c.repo);
+  }
+  async function ghFetch(url, opts){
     let res;
     try {
-      res = await fetch(c.api + path, Object.assign({}, opts, {
-        headers: Object.assign({ 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminToken }, (opts && opts.headers) || {})
+      res = await fetch(url, Object.assign({ cache: 'no-store' }, opts, {
+        headers: Object.assign({
+          Accept: 'application/vnd.github+json',
+          Authorization: 'Bearer ' + adminToken,
+          'X-GitHub-Api-Version': '2022-11-28'
+        }, (opts && opts.headers) || {})
       }));
-    } catch(e) { throw new Error('به سرور وصل نشد. اینترنت یا آدرس بک‌اند رو چک کنید.'); }
-    if (res.status === 401) { setAuthed(false); throw new Error('نشست تموم شد؛ دوباره وارد بشید.'); }
+    } catch(e) { throw new Error('به گیت‌هاب وصل نشد. اینترنت (یا فیلترشکن) رو چک کنید.'); }
+    if (res.status === 401) { setAuthed(false); throw new Error('توکن نامعتبره یا منقضی شده؛ دوباره وارد بشید.'); }
     return res;
   }
 
-  // آدرس بک‌اندی که خود سایت استفاده می‌کنه (data/config.json → apiBase)
-  // اگه خواستی آدرس سرور رو ثابت تو همین فایل بذاری، اینجا بنویس (اختیاریه)
-  const DEFAULT_API = '';
-  let siteApiBase = '';
-  const siteApiReady = (async () => {
-    try {
-      const r = await fetch(new URL('data/config.json', location.href).href + '?t=' + Date.now(), { cache: 'no-store' });
-      if (!r.ok) return;
-      const c = await r.json();
-      if (c && c.apiBase) {
-        siteApiBase = String(c.apiBase).trim().replace(/\/+$/, '');
-        els.api.value = siteApiBase;
-      }
-    } catch(e){}
-  })();
+  // بخش سفارش‌ها و بکاپ به سرور نیاز داره و تو این نسخه غیرفعاله
+  async function apiFetch(){ throw new Error('این بخش به سرور نیاز داره و تو این نسخه غیرفعاله.'); }
 
   async function doLogin(){
     const st = document.getElementById('authStatus');
     try {
-      if (!els.user.value.trim()) throw new Error('نام کاربری رو وارد کنید.');
-      if (!els.pass.value) throw new Error('رمز عبور رو وارد کنید.');
-      setStatus('authStatus', 'busy', 'در حال ورود...');
-      await siteApiReady;
-      // اولویت: آدرس دستی (اگه تو بخش پیشرفته عوض شده)، بعد آدرس تنظیمات سایت، بعد آدرس ذخیره‌شده
-      const manual = apiBase();
-      const candidates = [];
-      [siteApiBase, DEFAULT_API, manual].forEach(u => {
-        u = String(u || '').trim().replace(/\/+$/, '');
-        if (/^https?:\/\//.test(u) && !candidates.includes(u)) candidates.push(u);
-      });
-      if (!candidates.length) {
-        throw new Error('آدرس سرور پیدا نشد. باید تو فایل data/config.json سایت، کلید apiBase تنظیم شده باشه.');
-      }
-      let res = null, usedBase = '';
-      for (const base of candidates) {
-        try {
-          const r = await fetch(base + '/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: els.user.value.trim(), password: els.pass.value }) });
-          // آدرس قدیمی/مرده معمولاً ۴۰۴ یا خطای ۵xx می‌ده؛ برو سراغ آدرس بعدی
-          if (r.status === 404 || r.status >= 500) continue;
-          res = r; usedBase = base;
-          break;
-        } catch(e) { res = null; }
-      }
-      if (!res) {
-        throw new Error('به سرور وصل نشد. مطمئن شید سرور روشنه و اینترنت وصله.');
-      }
+      const token = els.pass.value.trim();
+      if (!token) throw new Error('توکن گیت‌هاب رو وارد کنید.');
+      if (!els.owner.value.trim() || !els.repo.value.trim()) throw new Error('نام کاربری و ریپوی گیت‌هاب تو تنظیمات پیشرفته خالیه.');
+      setStatus('authStatus', 'busy', 'در حال بررسی توکن...');
+      adminToken = token;
+      const res = await ghFetch(ghRepoUrl());
       const j = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(j.error || (res.status === 401 ? 'رمز اشتباهه.' : 'خطا (' + res.status + ')'));
-      adminToken = j.token;
-      try { sessionStorage.setItem('persianAdminToken', adminToken); } catch(e){}
-      els.api.value = usedBase;
+      if (!res.ok) {
+        throw new Error(res.status === 404
+          ? 'این توکن به ریپوی ' + els.owner.value.trim() + '/' + els.repo.value.trim() + ' دسترسی نداره.'
+          : (j.message || ('خطا (' + res.status + ')')));
+      }
+      if (j.permissions && j.permissions.push === false) {
+        throw new Error('توکن فقط اجازه‌ی خوندن داره؛ باید Contents روی Read and write باشه.');
+      }
+      try { sessionStorage.setItem('persianGhToken', adminToken); } catch(e){}
       els.pass.value = '';
       persistCfgIfNeeded();
       setAuthed(true);
       st.className = 'status';
-    } catch(e) { setStatus('authStatus', 'err', errMsg(e)); }
+    } catch(e) { adminToken = ''; setStatus('authStatus', 'err', errMsg(e)); }
   }
   document.getElementById('loginBtn').addEventListener('click', doLogin);
   els.pass.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
-  els.user.addEventListener('keydown', e => { if (e.key === 'Enter') els.pass.focus(); });
   document.getElementById('logoutBtn').addEventListener('click', () => { setAuthed(false); document.getElementById('authStatus').className = 'status'; });
 
   // ---------- Base64 helpers (UTF-8 safe) ----------
@@ -547,17 +524,33 @@
   // ---------- GitHub API helpers ----------
   // نوشتن/خوندن روی گیت‌هاب از طریق بک‌اند؛ توکن فقط روی سرور هست
   async function ghGetFile(path){
-    const res = await apiFetch('/api/admin/gh/file?path=' + encodeURIComponent(path));
+    const c = validateCfg();
+    const url = ghRepoUrl() + '/contents/' + path.split('/').map(encodeURIComponent).join('/') + '?ref=' + encodeURIComponent(c.branch);
+    const res = await ghFetch(url);
+    if (res.status === 404) return { exists:false, sha:null, content:null };
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error || ('خطا در خواندن ' + path + ' (' + res.status + ')'));
-    if (!data.exists) return { exists:false, sha:null, content:null };
-    return { exists:true, sha:data.sha, content: b64DecodeUnicode(data.content) };
+    if (!res.ok) throw new Error(data.message || ('خطا در خواندن ' + path + ' (' + res.status + ')'));
+    let b64 = String(data.content || '').replace(/\s+/g, '');
+    if (!b64 && data.sha) { // فایل‌های بزرگ‌تر از ۱ مگابایت
+      const r2 = await ghFetch(ghRepoUrl() + '/git/blobs/' + data.sha);
+      const b = await r2.json().catch(() => ({}));
+      b64 = String(b.content || '').replace(/\s+/g, '');
+    }
+    return { exists:true, sha:data.sha, content: b64DecodeUnicode(b64) };
   }
 
   async function ghPutFile(path, contentB64, message, sha){
-    const res = await apiFetch('/api/admin/gh/file', { method: 'PUT', body: JSON.stringify({ path, content: contentB64, message, sha }) });
+    const c = validateCfg();
+    const body = { message, content: contentB64, branch: c.branch };
+    if (sha) body.sha = sha;
+    const url = ghRepoUrl() + '/contents/' + path.split('/').map(encodeURIComponent).join('/');
+    const res = await ghFetch(url, { method: 'PUT', body: JSON.stringify(body) });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error || ('خطای سرور: ' + res.status));
+    if (!res.ok) {
+      if (res.status === 409 || res.status === 422) throw new Error('فایل تو این فاصله تغییر کرده؛ صفحه رو رفرش کنید و دوباره امتحان کنید.');
+      if (res.status === 403 || res.status === 404) throw new Error('توکن اجازه‌ی نوشتن تو این ریپو رو نداره (Contents باید Read and write باشه).');
+      throw new Error(data.message || ('خطای گیت‌هاب: ' + res.status));
+    }
     return data;
   }
 
@@ -1249,11 +1242,11 @@
   // ---------- Save backend address into the public site config ----------
   document.getElementById('saveApiBtn').addEventListener('click', async () => {
     try {
-      const c = validateCfg();
+      validateCfg();
       persistCfgIfNeeded();
       setStatus('authStatus', 'busy', 'در حال ذخیره...');
-      await saveConfigPatch({ apiBase: c.api });
-      setStatus('authStatus', 'ok', 'ذخیره شد 🎉 چند دقیقه بعد (بعد از آپدیت گیت‌هاب‌پیجز) سایت به بک‌اند وصل می‌شه.');
+      await saveConfigPatch({ apiBase: '' });
+      setStatus('authStatus', 'ok', 'ذخیره شد 🎉 چند دقیقه بعد (بعد از آپدیت گیت‌هاب‌پیجز) سایت بدون بک‌اند کار می‌کنه.');
     } catch (e) { setStatus('authStatus', 'err', 'خطا: ' + errMsg(e)); }
   });
 
