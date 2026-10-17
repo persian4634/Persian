@@ -570,13 +570,38 @@
   const MAX_VIDEO_BYTES = 25 * 1024 * 1024;
   // خوندن فایل به‌صورت بایت: اول arrayBuffer، اگه نشد FileReader (بعضی مرورگرهای موبایل یکی‌شون رو رد می‌کنن)
   async function readFileBytes(file){
-    try { return await file.arrayBuffer(); } catch(e1) {}
-    return await new Promise((resolve, reject) => {
-      const r = new FileReader();
-      r.onload = () => resolve(r.result);
-      r.onerror = () => reject(new Error('خوندن فایل ویدیو ممکن نشد. دوباره ویدیو رو انتخاب کنید (بهتره از گالری، نه از داخل برنامه‌های دیگه).'));
-      r.readAsArrayBuffer(file);
-    });
+    const errs = [];
+    // روش ۱: arrayBuffer
+    try { return await file.arrayBuffer(); } catch(e) { errs.push('arrayBuffer:' + (e && e.name)); }
+    // روش ۲: FileReader
+    try {
+      return await new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(r.result);
+        r.onerror = () => reject(r.error || new Error('reader'));
+        r.readAsArrayBuffer(file);
+      });
+    } catch(e) { errs.push('FileReader:' + (e && e.name)); }
+    // روش ۳: fetch روی blob URL
+    try {
+      const u = URL.createObjectURL(file);
+      try { const res = await fetch(u); return await res.arrayBuffer(); }
+      finally { URL.revokeObjectURL(u); }
+    } catch(e) { errs.push('fetch:' + (e && e.name)); }
+    // روش ۴: خوندن تیکه‌تیکه (۵۱۲ کیلوبایتی)
+    try {
+      const CH = 512 * 1024, parts = [];
+      let total = 0;
+      for (let off = 0; off < file.size; off += CH) {
+        const part = await file.slice(off, off + CH).arrayBuffer();
+        parts.push(new Uint8Array(part)); total += part.byteLength;
+      }
+      const out = new Uint8Array(total); let pos = 0;
+      parts.forEach(pt => { out.set(pt, pos); pos += pt.length; });
+      return out.buffer;
+    } catch(e) { errs.push('chunk:' + (e && e.name)); }
+    const err = new Error('خوندن فایل ویدیو ممکن نشد (' + errs.join('، ') + '). معمولاً یعنی مرورگر اجازه‌ی خوندن اون فایل رو نداره؛ ویدیو رو تو گالری یا پوشه Download گوشی ذخیره کنید و از همون‌جا انتخاب کنید.');
+    throw err;
   }
   function bytesToBase64(buf){
     const bytes = new Uint8Array(buf);
@@ -1145,7 +1170,7 @@
       wrap._vidBytes = null;
       if (f && f.type && f.type.startsWith('video/')) {
         // همون لحظه انتخاب، فایل رو تو حافظه می‌خونیم تا بعداً (موقع ذخیره) دسترسی به فایل از دست نره
-        if (f.size <= MAX_VIDEO_BYTES) wrap._vidBytes = readFileBytes(f).catch(() => null);
+        if (f.size <= MAX_VIDEO_BYTES) wrap._vidBytes = readFileBytes(f).catch(e => { wrap._vidErr = e; return null; });
         img.style.display = 'none';
         if (note) { note.style.display = 'block'; note.textContent = '🎬 ویدیو انتخاب شد: ' + f.name + ' (' + (f.size / 1048576).toFixed(1) + ' مگابایت)'; }
       } else if (f) {
