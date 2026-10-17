@@ -287,6 +287,15 @@
     max-width:76px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   }
 
+  /* ---- Map app chooser ---- */
+  #mapOverlay{z-index:130;}
+  .map-list{display:flex;flex-direction:column;gap:10px;margin-top:4px;}
+  .map-row{display:flex;align-items:center;gap:14px;padding:13px 16px;border-radius:16px;background:var(--card);box-shadow:var(--shadow);text-decoration:none;color:var(--text);font-weight:700;font-size:15px;}
+  .map-row:active{transform:scale(.98);}
+  .map-row i{width:40px;height:40px;border-radius:12px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-style:normal;color:#fff;font-size:17px;font-weight:800;}
+  .map-row>svg{margin-right:auto;width:16px;height:16px;stroke:var(--muted);fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;}
+  .map-note{font-size:12px;color:var(--muted);text-align:center;margin:12px 0 0;line-height:1.8;}
+
   /* ---- Stories "more" indicator ---- */
   .stories-more{display:none;align-items:center;justify-content:space-between;gap:14px;padding:0 22px 6px;}
   .stories-more.show{display:flex;}
@@ -1268,6 +1277,18 @@
       <button type="button" class="d-btn solid" id="dCmtSend" style="width:100%;flex:none;">ارسال نظر</button>
       <p class="d-status" id="dCmtStatus"></p>
     </div>
+  </div>
+</div>
+
+<!-- Map app chooser -->
+<div class="login-overlay" id="mapOverlay">
+  <div class="login-scrim" id="mapScrim"></div>
+  <div class="login-card" role="dialog" aria-modal="true">
+    <button class="l-close" id="mapClose" aria-label="بستن"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <h3>مسیریابی با کدوم برنامه؟</h3>
+    <p class="l-sub">برنامه‌ای که روی گوشی‌ت داری رو انتخاب کن.</p>
+    <div class="map-list" id="mapList"></div>
+    <p class="map-note">اگه برنامه نصب نبود، نسخه وب همون سرویس باز می‌شه.</p>
   </div>
 </div>
 
@@ -2255,6 +2276,24 @@
     try { localStorage.setItem('persianTheme', root.getAttribute('data-theme')); } catch(e){}
   });
 
+  /* ---- Map app chooser (Balad / Neshan / Waze / Google Maps) ---- */
+  const SHOP_LAT = 35.618452, SHOP_LNG = 51.435861;
+  const MAP_APPS = [
+    { name:'بلد', color:'#1BA466', ch:'<path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.400-6.500 11-6.500 11z"/><circle cx="12" cy="10" r="2.300"/>', url:'https://balad.ir/p/3mZR6tGvjTr3zy' },
+    { name:'نشان', color:'#2C7BE5', ch:'<path d="M12 3l7 17-7-4-7 4z"/>', url:`https://nshn.ir/?lat=${SHOP_LAT}&lng=${SHOP_LNG}` },
+    { name:'ویز (Waze)', color:'#33CCFF', ch:'<path d="M12 4c-4.400 0-8 3.200-8 7.200 0 1.700.7 3.300 1.800 4.500L5 19.500l3.200-1.200c1.100.4 2.400.7 3.800.7 4.400 0 8-3.200 8-7.200S16.400 4 12 4z"/><circle cx="9.500" cy="10" r=".6" fill="#fff"/><circle cx="14.500" cy="10" r=".6" fill="#fff"/><path d="M9 13c1.500 1.400 4.500 1.400 6 0"/>', url:`https://waze.com/ul?ll=${SHOP_LAT},${SHOP_LNG}&navigate=yes` },
+    { name:'گوگل مپ', color:'#EA4335', ch:'<path d="M12 21.500s-7-5.800-7-11.500a7 7 0 0 1 14 0c0 5.700-7 11.500-7 11.500z"/><circle cx="12" cy="10" r="2.500" fill="#fff" stroke="none"/>', url:`https://www.google.com/maps/search/?api=1&query=${SHOP_LAT},${SHOP_LNG}` }
+  ];
+  const mapOverlay = document.getElementById('mapOverlay');
+  document.getElementById('mapList').innerHTML = MAP_APPS.map(a =>
+    `<a class="map-row" href="${a.url}" target="_blank" rel="noopener"><i style="background:${a.color}"><svg viewBox="0 0 24 24" style="width:22px;height:22px;margin:0;stroke:#fff;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;">${a.ch}</svg></i>${a.name}<svg viewBox="0 0 24 24"><path d="M14 6l-6 6 6 6"/></svg></a>`).join('');
+  function openMapChooser(){ mapOverlay.classList.add('open'); }
+  function closeMapChooser(){ mapOverlay.classList.remove('open'); }
+  document.getElementById('aboutLocBtn').addEventListener('click', (e) => { e.preventDefault(); openMapChooser(); });
+  document.getElementById('mapClose').addEventListener('click', closeMapChooser);
+  document.getElementById('mapScrim').addEventListener('click', closeMapChooser);
+  document.getElementById('mapList').addEventListener('click', () => setTimeout(closeMapChooser, 300));
+
   /* ---- Login (device-only: remembers name + phone on this browser) ---- */
   const loginOverlay = document.getElementById('loginOverlay');
   const toEnDigits = v => String(v || '').replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
@@ -2646,6 +2685,27 @@
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && catOpen && !detailOpen) closeCategory(); });
   document.getElementById('navCats').addEventListener('click', e => { e.preventDefault(); openCategory(''); });
 
+  /* ---- Icons for admin-created categories (matched by name) ---- */
+  const CAT_ICONS = [
+    { keys:['گوشواره','گوشوار'], color:'#D9467A', svg:'<path d="M12 10c2.5 3 4 5 4 7a4 4 0 0 1-8 0c0-2 1.5-4 4-7z"/><circle cx="12" cy="5.5" r="1.8"/><path d="M12 7.3V10"/>' },
+    { keys:['گردنبند','گردن بند','آویز'], color:'#B8862B', svg:'<path d="M4 5c0 8 3.5 11 8 11s8-3 8-11"/><path d="M12 16l-2.2 3L12 21.5 14.2 19z"/>' },
+    { keys:['دستبند','دست بند'], color:'#2E8B8B', svg:'<ellipse cx="12" cy="12" rx="8.5" ry="5.5"/><ellipse cx="12" cy="12" rx="5" ry="2.6"/><circle cx="12" cy="6.5" r="1.2" fill="#fff" stroke="none"/>' },
+    { keys:['پابند','پا بند'], color:'#7A5BC7', svg:'<ellipse cx="12" cy="9" rx="7.5" ry="3"/><path d="M7.5 11.6v3.2M12 12.1v4.4M16.5 11.6v3.2"/><circle cx="7.5" cy="16" r="1.2"/><circle cx="12" cy="18" r="1.2"/><circle cx="16.5" cy="16" r="1.2"/>' },
+    { keys:['تل','هدبند','هدband'], color:'#C2603C', svg:'<path d="M3 16C3 8 7 4 12 4s9 4 9 12"/><path d="M6.5 16c0-5 2.4-8 5.5-8s5.5 3 5.5 8"/>' },
+    { keys:['نیم ست','نیمست','ست'], color:'#3C6FD1', svg:'<path d="M6 4h12l3 5-9 11L3 9z"/><path d="M3 9h18M9.5 4L7.5 9 12 20l4.5-11-2-5"/>' },
+    { keys:['انگشتر'], color:'#C0392B', svg:'<circle cx="12" cy="15" r="5.5"/><path d="M9.5 6.5L12 3l2.5 3.5L12 9.2z"/>' },
+    { keys:['ساعت'], color:'#4A5568', svg:'<circle cx="12" cy="12" r="6"/><path d="M12 9v3.2l2 1.3M9 6l.7-3h4.6l.7 3M9 18l.7 3h4.6l.7-3"/>' },
+    { keys:['کیف'], color:'#8A5A44', svg:'<rect x="4" y="8" width="16" height="12" rx="2.5"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>' },
+    { keys:['کلاه','شال','روسری'], color:'#5C8A4D', svg:'<path d="M4 15c0-5 3.5-9 8-9s8 4 8 9z"/><path d="M3 15h18v2.5H3z"/>' }
+  ];
+  const CAT_ICON_DEFAULT = { color:'#4C6FF0', svg:'<path d="M6 4h12l3 5-9 11L3 9z"/><path d="M3 9h18"/>' };
+  function catIcon(name){
+    const n = String(name || '').replace(/\u200c/g, ' ').trim();
+    const hit = CAT_ICONS.find(c => c.keys.some(k => n === k || n.includes(k)));
+    const ic = hit || CAT_ICON_DEFAULT;
+    return { color: ic.color, html: '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + ic.svg + '</svg>' };
+  }
+
   // Wire the drawer menu rows by their label; add rows for admin-created categories.
   function buildCategoryMenu(){
     const rows = Array.from(document.querySelectorAll('#menuOverlay .menu-list a.menu-row'));
@@ -2670,8 +2730,9 @@
         const chev = row.querySelector('.chev');
         row.textContent = '';
         const ico = lastCatRow.querySelector('.menu-ico').cloneNode(true);
-        ico.style.background = '#3A3A3C';
-        ico.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="3"/></svg>';
+        const _ic = catIcon(c);
+        ico.style.background = _ic.color;
+        ico.innerHTML = _ic.html;
         row.appendChild(ico);
         row.appendChild(document.createTextNode(c));
         if (chev) row.appendChild(chev);
