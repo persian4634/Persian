@@ -412,6 +412,31 @@
   }
   .story-toast.show{opacity:1;transform:translate(-50%,0);}
 
+  /* ---- Video stories ---- */
+  .story-viewer-media video{display:none;width:100%;height:100%;object-fit:contain;background:#000;}
+  .story-viewer-tap,.story-viewer-hold{touch-action:none;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;}
+  .story-viewer-hold{position:absolute;top:0;bottom:0;left:32%;right:32%;z-index:1;}
+  .story-viewer-titlewrap{flex:1;min-width:0;padding:0 12px;}
+  .story-viewer-time{display:none;color:rgba(255,255,255,.88);font-size:12px;margin-top:2px;font-variant-numeric:tabular-nums;}
+  .story-viewer-menu{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.2);border:none;display:flex;align-items:center;justify-content:center;flex:0 0 auto;cursor:pointer;}
+  .story-viewer-menu svg{width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2.2;stroke-linecap:round;}
+  .story-viewer-top,.story-viewer-bar,.story-viewer-caption{transition:opacity .15s;}
+  .story-viewer.holding .story-viewer-top,.story-viewer.holding .story-viewer-bar,.story-viewer.holding .story-viewer-caption{opacity:0;}
+  .story-seek-hint{position:absolute;top:50%;z-index:3;transform:translateY(-50%);background:rgba(0,0,0,.55);color:#fff;font-size:14px;font-weight:700;padding:10px 16px;border-radius:24px;opacity:0;pointer-events:none;transition:opacity .15s;}
+  .story-seek-hint.show{opacity:1;}
+  .story-seek-hint.back{left:18px;}
+  .story-seek-hint.fwd{right:18px;}
+  .story-sheet-overlay{position:absolute;inset:0;z-index:8;background:rgba(0,0,0,.45);opacity:0;pointer-events:none;transition:opacity .25s;}
+  .story-sheet-overlay.open{opacity:1;pointer-events:auto;}
+  .story-sheet{position:absolute;left:0;right:0;bottom:0;z-index:9;background:var(--bg);color:var(--text);border-radius:26px 26px 0 0;padding:10px 16px calc(22px + env(safe-area-inset-bottom));transform:translateY(105%);transition:transform .3s ease;max-width:520px;margin:0 auto;}
+  .story-sheet.open{transform:translateY(0);}
+  .story-sheet-handle{width:44px;height:4px;border-radius:2px;background:rgba(128,128,128,.45);margin:4px auto 14px;}
+  .story-sheet h3{margin:0 4px 14px;font-size:18px;font-weight:800;}
+  .story-sheet-group{background:var(--card);border-radius:18px;padding:4px 0;}
+  .story-sheet-row{width:100%;display:flex;align-items:center;gap:14px;padding:16px 18px;background:none;border:none;font-family:inherit;font-size:16px;color:var(--text);text-align:start;cursor:pointer;}
+  .story-sheet-row svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto;}
+  .story-sheet-row + .story-sheet-row{border-top:1px solid rgba(128,128,128,.18);}
+
   .section{padding:20px 20px 0;}
 
   .meet-card{background:var(--card);border-radius:24px;padding:26px 22px;box-shadow:var(--shadow);position:relative;}
@@ -1112,18 +1137,43 @@
 <div class="story-viewer" id="storyViewer">
   <div class="story-viewer-media" id="storyViewerMedia">
     <img id="storyViewerImg" alt="" style="display:none;">
+    <video id="storyViewerVideo" playsinline webkit-playsinline preload="auto"></video>
   </div>
   <div class="story-viewer-tap prev" id="storyViewerPrev"></div>
   <div class="story-viewer-tap next" id="storyViewerNext"></div>
+  <div class="story-viewer-hold" id="storyViewerHold"></div>
   <div class="story-viewer-progress" id="storyViewerProgress"></div>
   <div class="story-viewer-top">
     <button class="story-viewer-close" id="storyViewerClose">
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2"><path d="M6 6l12 12M18 6L6 18"/></svg>
     </button>
-    <div class="story-viewer-title" id="storyViewerTitle"></div>
+    <div class="story-viewer-titlewrap">
+      <div class="story-viewer-title" id="storyViewerTitle"></div>
+      <div class="story-viewer-time" id="storyViewerTime"></div>
+    </div>
+    <button class="story-viewer-menu" id="storyViewerMenu" aria-label="گزینه‌ها">
+      <svg viewBox="0 0 24 24"><path d="M5 9h14M5 15h14"/></svg>
+    </button>
   </div>
   <div class="story-viewer-caption" id="storyViewerCaption" style="display:none;"></div>
+  <div class="story-seek-hint" id="storySeekHint"></div>
   <div class="story-toast" id="storyToast"></div>
+  <div class="story-sheet-overlay" id="storySheetOverlay"></div>
+  <div class="story-sheet" id="storySheet" role="dialog" aria-label="درباره این استوری">
+    <div class="story-sheet-handle"></div>
+    <h3>درباره این استوری</h3>
+    <div class="story-sheet-group">
+      <button type="button" class="story-sheet-row" id="storyMuteRow">
+        <svg class="ico-sound" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16.5 8.5a5 5 0 010 7M19 6a8.5 8.5 0 010 12"/></svg>
+        <svg class="ico-muted" viewBox="0 0 24 24" style="display:none;"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M17 9l5 6M22 9l-5 6"/></svg>
+        <span id="storyMuteLabel">بی‌صدا کردن</span>
+      </button>
+      <button type="button" class="story-sheet-row" id="storyShareRow">
+        <svg viewBox="0 0 24 24"><path d="M21 3L10 14M21 3l-7 18-4-7-7-4 18-7z"/></svg>
+        <span>اشتراک‌گذاری</span>
+      </button>
+    </div>
+  </div>
   <div class="story-viewer-bar story-bar" id="storyBar">
     <input class="story-input" id="storyInput" type="text" placeholder="نظرت رو بنویس..." enterkeyhint="send" autocomplete="off" maxlength="300">
     <button type="button" class="story-act" id="storyLike" aria-label="لایک"><svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.3 3 4.5 6.6 4.5c2 0 3.5 1 5.4 3 1.9-2 3.4-3 5.4-3 3.6 0 5.7 3.800 4.200 7.300C19.500 16.400 12 21 12 21z"/></svg></button>
@@ -1485,20 +1535,63 @@
   function buildStoryProgressBar(){
     storyViewerProgress.innerHTML = storyItems.map(() => '<div class="seg"><i></i></div>').join('');
   }
+  const storyViewerVideo = document.getElementById('storyViewerVideo');
+  const storyViewerTime = document.getElementById('storyViewerTime');
+  const storySeekHint = document.getElementById('storySeekHint');
+  let storyMuted = false;
+  try { storyMuted = localStorage.getItem('storyMuted') === '1'; } catch(e){}
+  function isVideoStory(){ return !!(storyItems[storyIndex] && storyItems[storyIndex].dataset.video); }
+  const faNum = n => Number(n).toLocaleString('fa-IR');
+  function fmtTime(sec){
+    sec = Math.max(0, Math.floor(sec || 0));
+    return faNum(Math.floor(sec / 60)) + ':' + faNum(sec % 60).padStart(2, '۰');
+  }
+  function updateVideoProgress(){
+    const v = storyViewerVideo, d = v.duration;
+    const bar = storyViewerProgress.querySelector('.seg.active i');
+    const known = d && isFinite(d);
+    if (bar && known) bar.style.width = Math.min(100, (v.currentTime / d) * 100) + '%';
+    storyViewerTime.textContent = known ? (fmtTime(v.currentTime) + ' از ' + fmtTime(d)) : fmtTime(v.currentTime);
+  }
+  storyViewerVideo.addEventListener('timeupdate', updateVideoProgress);
+  storyViewerVideo.addEventListener('loadedmetadata', updateVideoProgress);
+  storyViewerVideo.addEventListener('ended', () => { if (isVideoStory() && storyViewer.classList.contains('open')) nextStory(); });
+  storyViewerVideo.addEventListener('error', () => {
+    if (!isVideoStory() || !storyViewer.classList.contains('open') || !storyViewerVideo.getAttribute('src')) return;
+    showStoryToast('ویدیو بارگذاری نشد');
+    clearStoryTimer();
+    storyTimer = setTimeout(nextStory, 2500);
+  });
+  function playStoryVideo(){
+    const v = storyViewerVideo;
+    const p = v.play();
+    if (p && p.catch) p.catch(() => {
+      // browser blocked sound without a tap: play muted instead of staying frozen
+      if (!v.muted) { v.muted = true; v.play().catch(() => {}); updateSheetState(); showStoryToast('صدا از منوی بالا فعال می‌شه'); }
+    });
+  }
+
   function setStoryProgressState(){
     const segs = storyViewerProgress.querySelectorAll('.seg');
+    const vid = isVideoStory();
     segs.forEach((seg, i) => {
       seg.classList.remove('done', 'active');
       const bar = seg.querySelector('i');
       bar.style.animation = 'none';
+      bar.style.width = '';
       if (i < storyIndex) {
         seg.classList.add('done');
       } else if (i === storyIndex) {
-        // restart the fill animation on the active segment
-        void bar.offsetWidth;
-        bar.style.animation = '';
-        bar.style.animationDuration = STORY_DURATION_MS + 'ms';
-        seg.classList.add('active');
+        if (vid) {
+          bar.style.width = '0%';          // for videos the bar width follows the video itself
+          seg.classList.add('active');
+        } else {
+          // restart the fill animation on the active segment
+          void bar.offsetWidth;
+          bar.style.animation = '';
+          bar.style.animationDuration = STORY_DURATION_MS + 'ms';
+          seg.classList.add('active');
+        }
       }
     });
   }
@@ -1507,18 +1600,38 @@
   }
   function showStoryAt(i){
     clearStoryTimer();
+    stopSeek();
     storyIndex = i;
     const item = storyItems[storyIndex];
     const image = item.dataset.image;
-    if (image) {
-      storyViewerImg.src = encodeURI(image);
-      storyViewerImg.style.display = 'block';
-      storyViewerMedia.style.backgroundImage = '';
-    } else {
-      // No real photo yet: fall back to the story's own gradient, full-screen.
+    const video = item.dataset.video;
+    if (video) {
       storyViewerImg.style.display = 'none';
       storyViewerImg.src = '';
-      storyViewerMedia.style.backgroundImage = `linear-gradient(155deg, ${item.dataset.c1 || '#5FCFC0'}, ${item.dataset.c2 || '#1E7E76'})`;
+      storyViewerMedia.style.backgroundImage = '';
+      storyViewerVideo.style.display = 'block';
+      if (image) storyViewerVideo.poster = encodeURI(image); else storyViewerVideo.removeAttribute('poster');
+      storyViewerVideo.muted = storyMuted;
+      storyViewerVideo.src = encodeURI(video);
+      storyViewerTime.style.display = 'block';
+      storyViewerTime.textContent = '';
+    } else {
+      storyViewerVideo.pause();
+      storyViewerVideo.removeAttribute('src');
+      storyViewerVideo.removeAttribute('poster');
+      storyViewerVideo.load();
+      storyViewerVideo.style.display = 'none';
+      storyViewerTime.style.display = 'none';
+      if (image) {
+        storyViewerImg.src = encodeURI(image);
+        storyViewerImg.style.display = 'block';
+        storyViewerMedia.style.backgroundImage = '';
+      } else {
+        // No real photo yet: fall back to the story's own gradient, full-screen.
+        storyViewerImg.style.display = 'none';
+        storyViewerImg.src = '';
+        storyViewerMedia.style.backgroundImage = `linear-gradient(155deg, ${item.dataset.c1 || '#5FCFC0'}, ${item.dataset.c2 || '#1E7E76'})`;
+      }
     }
     storyViewerTitle.textContent = item.dataset.title || '';
     const hasDesc = !!item.dataset.desc;
@@ -1527,18 +1640,21 @@
     setStoryProgressState();
     storyRemaining = STORY_DURATION_MS;
     storyPaused = false;
-    startStoryTimer();
+    if (video) playStoryVideo(); else startStoryTimer();
     markStorySeen(item);
     syncLikeButton();
+    updateSheetState();
   }
   function startStoryTimer(){
     clearStoryTimer();
+    if (isVideoStory()) return;            // a video moves on by itself when it ends
     storyStartedAt = Date.now();
     storyTimer = setTimeout(nextStory, storyRemaining);
   }
   function pauseStory(){
     if (storyPaused || !storyViewer.classList.contains('open')) return;
     storyPaused = true;
+    if (isVideoStory()) { storyViewerVideo.pause(); return; }
     clearStoryTimer();
     storyRemaining = Math.max(300, storyRemaining - (Date.now() - storyStartedAt));
     const bar = storyViewerProgress.querySelector('.seg.active i');
@@ -1547,6 +1663,7 @@
   function resumeStory(){
     if (!storyPaused) return;
     storyPaused = false;
+    if (isVideoStory()) { playStoryVideo(); return; }
     const bar = storyViewerProgress.querySelector('.seg.active i');
     if (bar) bar.style.animationPlayState = 'running';
     startStoryTimer();
@@ -1572,11 +1689,20 @@
     storyInput.value = ''; storyBar.classList.remove('typing'); storyInput.blur();
     storyViewer.classList.remove('open');
     storyViewerImg.src = '';
+    stopSeek();
+    closeStorySheet(true);
+    holdOwned = false;
+    storyViewer.classList.remove('holding');
+    storyViewerVideo.pause();
+    storyViewerVideo.removeAttribute('src');
+    storyViewerVideo.removeAttribute('poster');
+    storyViewerVideo.load();
     applySeenStories();
   }
   document.getElementById('storyViewerClose').addEventListener('click', closeStoryViewer);
-  document.getElementById('storyViewerNext').addEventListener('click', nextStory);
-  document.getElementById('storyViewerPrev').addEventListener('click', prevStory);
+  let suppressStoryClickUntil = 0;
+  document.getElementById('storyViewerNext').addEventListener('click', () => { if (Date.now() < suppressStoryClickUntil) return; nextStory(); });
+  document.getElementById('storyViewerPrev').addEventListener('click', () => { if (Date.now() < suppressStoryClickUntil) return; prevStory(); });
   storyViewer.addEventListener('click', (e) => { if (e.target === storyViewer) closeStoryViewer(); });
 
   // Tapping any story opens it full-screen and starts auto-advancing through
@@ -1589,6 +1715,116 @@
   });
 
 
+  /* ---- Hold gestures: hold = pause; hold on the sides of a video = rewind / fast-forward ---- */
+  let holdOwned = false, seekTimer = null;
+  function holdPause(){
+    if (!storyPaused) { pauseStory(); holdOwned = true; }
+    storyViewer.classList.add('holding');
+  }
+  function holdResume(){
+    storyViewer.classList.remove('holding');
+    if (holdOwned) { holdOwned = false; resumeStory(); }
+  }
+  function startSeek(dir){
+    stopSeek();
+    storySeekHint.textContent = dir > 0 ? '⏩ جلو' : '⏪ عقب';
+    storySeekHint.className = 'story-seek-hint show ' + (dir > 0 ? 'fwd' : 'back');
+    seekTimer = setInterval(() => {
+      const v = storyViewerVideo, d = v.duration;
+      if (!d || !isFinite(d)) return;
+      v.currentTime = Math.min(Math.max(v.currentTime + dir * 0.5, 0), Math.max(0, d - 0.05));
+    }, 100);
+  }
+  function stopSeek(){
+    if (seekTimer) { clearInterval(seekTimer); seekTimer = null; }
+    storySeekHint.classList.remove('show');
+  }
+  function attachHold(el, kind){
+    let timer = null, held = false;
+    el.addEventListener('pointerdown', e => {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      held = false;
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        held = true;
+        holdPause();
+        if (kind !== 'mid' && isVideoStory()) startSeek(kind === 'next' ? 1 : -1);
+      }, 260);
+    });
+    const end = () => {
+      clearTimeout(timer); timer = null;
+      if (held) { held = false; stopSeek(); holdResume(); suppressStoryClickUntil = Date.now() + 450; }
+    };
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach(t => el.addEventListener(t, end));
+    el.addEventListener('contextmenu', e => e.preventDefault());
+  }
+  attachHold(document.getElementById('storyViewerPrev'), 'prev');
+  attachHold(document.getElementById('storyViewerNext'), 'next');
+  attachHold(document.getElementById('storyViewerHold'), 'mid');
+
+  /* ---- "About this story" sheet: mute + share ---- */
+  const storySheet = document.getElementById('storySheet');
+  const storySheetOverlay = document.getElementById('storySheetOverlay');
+  const storyMuteRow = document.getElementById('storyMuteRow');
+  const storyMuteLabel = document.getElementById('storyMuteLabel');
+  let sheetOwned = false;
+  function updateSheetState(){
+    const vid = isVideoStory();
+    const muted = storyViewerVideo.muted;
+    storyMuteRow.style.display = vid ? '' : 'none';
+    storyMuteLabel.textContent = muted ? 'فعال کردن صدا' : 'بی‌صدا کردن';
+    storyMuteRow.querySelector('.ico-sound').style.display = muted ? 'none' : '';
+    storyMuteRow.querySelector('.ico-muted').style.display = muted ? '' : 'none';
+  }
+  function openStorySheet(){
+    if (!storyPaused) { pauseStory(); sheetOwned = true; }
+    updateSheetState();
+    storySheet.classList.add('open');
+    storySheetOverlay.classList.add('open');
+  }
+  function closeStorySheet(skipResume){
+    storySheet.classList.remove('open');
+    storySheetOverlay.classList.remove('open');
+    if (sheetOwned) { sheetOwned = false; if (!skipResume) resumeStory(); }
+  }
+  document.getElementById('storyViewerMenu').addEventListener('click', openStorySheet);
+  storySheetOverlay.addEventListener('click', () => closeStorySheet());
+  storyMuteRow.addEventListener('click', () => {
+    const v = storyViewerVideo;
+    v.muted = !v.muted;
+    storyMuted = v.muted;
+    try { localStorage.setItem('storyMuted', storyMuted ? '1' : '0'); } catch(e){}
+    updateSheetState();
+    showStoryToast(v.muted ? 'ویدیو بی‌صدا شد' : 'صدا فعال شد');
+    closeStorySheet();
+  });
+  document.getElementById('storyShareRow').addEventListener('click', async () => {
+    const item = storyItems[storyIndex];
+    const title = (item && item.dataset.title) || '';
+    const url = location.origin + location.pathname + '?story=' + encodeURIComponent(title);
+    const data = { title: 'پرشین', text: 'استوری «' + title + '» رو تو پرشین ببین', url };
+    try {
+      if (navigator.share) await navigator.share(data);
+      else if (navigator.clipboard) { await navigator.clipboard.writeText(url); showStoryToast('لینک استوری کپی شد'); }
+      else prompt('لینک استوری:', url);
+    } catch(e) { /* user cancelled */ }
+    closeStorySheet();
+  });
+
+  // A shared link (?story=title) opens that story directly
+  let sharedStoryDone = false;
+  function openSharedStory(final){
+    if (sharedStoryDone) return;
+    let q = '';
+    try { q = new URLSearchParams(location.search).get('story') || ''; } catch(e){}
+    if (!q) { if (final) sharedStoryDone = true; return; }
+    const items = Array.from(track.querySelectorAll('.story-item'));
+    const idx = items.findIndex(it => (it.dataset.title || '') === q);
+    if (idx >= 0) { sharedStoryDone = true; openStoryViewer(idx); }
+    else if (final) sharedStoryDone = true;
+  }
+  window.addEventListener('load', () => setTimeout(() => openSharedStory(false), 2500));
+
   /* ---- Story extras: seen state, like, comment ---- */
   // NOTE: this is a static site, so "seen" and "liked" are remembered per device/browser (localStorage).
   const storyInput = document.getElementById('storyInput');
@@ -1596,7 +1832,7 @@
   const storyLikeBtn = document.getElementById('storyLike');
   const storySendBtn = document.getElementById('storySend');
   const storyToast = document.getElementById('storyToast');
-  function storyKey(item){ return (item.dataset.title || '') + '|' + (item.dataset.image || ''); }
+  function storyKey(item){ return (item.dataset.title || '') + '|' + (item.dataset.image || '') + (item.dataset.video ? '|v' : ''); }
   function readStore(name){ try { return JSON.parse(localStorage.getItem(name) || '{}') || {}; } catch(e){ return {}; } }
   function writeStore(name, obj){ try { localStorage.setItem(name, JSON.stringify(obj)); } catch(e){} }
   const seenMemory = {};   // fallback for browsers that block localStorage
@@ -1874,7 +2110,8 @@
       const icon = s.image ? '' : (s.icon || '');
       const desc = s.desc ? ` data-desc="${escapeHtml(s.desc)}"` : '';
       const image = s.image ? ` data-image="${escapeHtml(s.image)}"` : '';
-      return `<div class="story-item" data-index="${i}" data-title="${escapeHtml(s.label || '')}" data-c1="${s.c1 || '#5FCFC0'}" data-c2="${s.c2 || '#1E7E76'}"${desc}${image}>
+      const video = s.video ? ` data-video="${escapeHtml(s.video)}"` : '';
+      return `<div class="story-item" data-index="${i}" data-title="${escapeHtml(s.label || '')}" data-c1="${s.c1 || '#5FCFC0'}" data-c2="${s.c2 || '#1E7E76'}"${desc}${image}${video}>
         <div class="story-ring" style="${ring}"><div class="story-photo"><div class="story-photo-inner" style="${photoBg}">${icon}</div></div></div>
         <span>${escapeHtml(s.label || '')}</span>
       </div>`;
@@ -1906,6 +2143,7 @@
     const visible = (stories || []).filter(s => !s.expiresAt || s.expiresAt > now);
     renderStories(visible);
     hydrateStoryImages(visible);
+    openSharedStory(true);
   }
 
   /* ---- Hero slider: one boxed slide at a time, auto-play + arrows + dots + swipe ---- */

@@ -566,6 +566,55 @@
     return path;
   }
 
+  // ---------- Video stories ----------
+  const MAX_VIDEO_BYTES = 25 * 1024 * 1024;
+  function fileToBase64(file){
+    return new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(String(r.result).split(',')[1] || '');
+      r.onerror = () => reject(new Error('خوندن فایل ویدیو ممکن نشد.'));
+      r.readAsDataURL(file);
+    });
+  }
+  async function ghUploadVideo(file){
+    const extMap = { 'video/mp4': 'mp4', 'video/webm': 'webm', 'video/quicktime': 'mov' };
+    const ext = extMap[file.type] || ((file.name.split('.').pop() || 'mp4').toLowerCase().replace(/[^a-z0-9]/g, '') || 'mp4');
+    const base = Date.now() + '-' + file.name.replace(/[^a-zA-Z0-9.\-_]/g, '-').replace(/\.[^.]+$/, '');
+    const path = `videos/${base}.${ext}`;
+    const b64 = await fileToBase64(file);
+    await ghPutFile(path, b64, `آپلود ویدیو ${base}.${ext}`);
+    return path;
+  }
+  // first frame of the video as a small JPEG, used for the story circle and as the poster
+  function makeVideoPoster(file){
+    return new Promise(resolve => {
+      const url = URL.createObjectURL(file);
+      const v = document.createElement('video');
+      v.muted = true; v.playsInline = true; v.preload = 'auto'; v.src = url;
+      let done = false, timer = null;
+      const finish = blob => {
+        if (done) return; done = true; clearTimeout(timer); URL.revokeObjectURL(url);
+        resolve(blob ? new File([blob], 'poster.jpg', { type: 'image/jpeg' }) : null);
+      };
+      timer = setTimeout(() => finish(null), 10000);
+      v.addEventListener('error', () => finish(null));
+      v.addEventListener('loadeddata', () => {
+        try { v.currentTime = Math.min(0.5, (v.duration || 1) / 2); } catch(e){ finish(null); }
+      });
+      v.addEventListener('seeked', () => {
+        try {
+          const w = v.videoWidth, h = v.videoHeight;
+          if (!w || !h) return finish(null);
+          const scale = Math.min(1, 800 / Math.max(w, h));
+          const c = document.createElement('canvas');
+          c.width = Math.round(w * scale); c.height = Math.round(h * scale);
+          c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
+          c.toBlob(b => finish(b), 'image/jpeg', 0.82);
+        } catch(e){ finish(null); }
+      });
+    });
+  }
+
   function setStatus(elId, type, msg){
     const el = document.getElementById(elId);
     el.className = 'status show ' + type;
@@ -1037,6 +1086,7 @@
     wrap.style.paddingTop = '12px';
     wrap.style.marginTop = '12px';
     wrap.dataset.existingImage = (existing && existing.image) || '';
+    wrap.dataset.existingVideo = (existing && existing.video) || '';
     wrap.dataset.existingExpiry = (existing && existing.expiresAt) || '';
     const esc = v => String(v == null ? '' : v).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
     const brandsVal = existing ? (Array.isArray(existing.brands) ? existing.brands.join('، ') : (existing.brands || '')) : '';
@@ -1063,8 +1113,10 @@
     wrap.innerHTML = `
       <label style="margin-top:0;">${rowLabel} ${index + 1} — ${rowLabel === 'استوری' ? 'عنوان کوتاه' : 'متن روی عکس'}</label>
       <input type="text" class="slide-label" value="${(existing && existing.label) ? existing.label.replace(/"/g,'&quot;') : ''}" placeholder="مثلاً: بدلیجات">
-      <label>عکس ${existing && existing.image ? '(اگه عکس جدید انتخاب نکنید، همین عکس فعلی می‌مونه)' : ''}</label>
-      <input type="file" class="slide-file" accept="image/*">
+      <label>${hasExpiry ? 'عکس یا ویدیو' : 'عکس'} ${existing && (existing.image || existing.video) ? '(اگه چیزی انتخاب نکنید، همین فعلی می‌مونه)' : ''}</label>
+      <input type="file" class="slide-file" accept="${hasExpiry ? 'image/*,video/*' : 'image/*'}">
+      <p class="help vid-note" style="margin-top:4px;${hasExpiry && existing && existing.video ? '' : 'display:none;'}">${hasExpiry && existing && existing.video ? '🎬 این استوری الان ویدیو داره. برای عوض کردنش، عکس یا ویدیوی جدید انتخاب کن.' : ''}</p>
+      ${hasExpiry ? '<p class="help" style="margin-top:4px;">ویدیو: ترجیحاً MP4، کوتاه (زیر ۳۰ ثانیه) و حداکثر ۲۵ مگابایت. عکس بندانگشتی از اولین فریم خودکار ساخته می‌شه.</p>' : ''}
       ${existing && existing.image ? `<img class="thumb" style="display:block;" src="${existing.image.startsWith('http') ? existing.image : ('https://raw.githubusercontent.com/' + els.owner.value.trim() + '/' + els.repo.value.trim() + '/' + els.branch.value.trim() + '/' + existing.image)}">` : ''}
       ${detailHtml}
       ${expiryHtml}
@@ -1079,7 +1131,17 @@
         img.className = 'thumb';
         fileInput.insertAdjacentElement('afterend', img);
       }
-      if (f) { img.src = URL.createObjectURL(f); img.style.display = 'block'; }
+      const note = wrap.querySelector('.vid-note');
+      if (f && f.type && f.type.startsWith('video/')) {
+        img.style.display = 'none';
+        if (note) { note.style.display = 'block'; note.textContent = '🎬 ویدیو انتخاب شد: ' + f.name + ' (' + (f.size / 1048576).toFixed(1) + ' مگابایت)'; }
+      } else if (f) {
+        if (note) {
+          if (wrap.dataset.existingVideo) { note.style.display = 'block'; note.textContent = 'این عکس جایگزین ویدیوی فعلی می‌شه.'; }
+          else { note.style.display = 'none'; }
+        }
+        img.src = URL.createObjectURL(f); img.style.display = 'block';
+      }
     });
     return wrap;
   }
@@ -1128,22 +1190,44 @@
           if (removed) continue;
 
           let image = existingImage;
+          let video = row.dataset.existingVideo || '';
           if (file) {
-            if (!file.type || !file.type.startsWith('image/')) {
-              rowErrors.push(`${rowLabel} ${i + 1}: فایل انتخابی عکس نیست، عکس قبلی نگه داشته شد.`);
-            } else {
+            const isVid = !!(file.type && file.type.startsWith('video/'));
+            const isImg = !!(file.type && file.type.startsWith('image/'));
+            if (isVid && hasExpiry) {
+              if (file.size > MAX_VIDEO_BYTES) {
+                rowErrors.push(`${rowLabel} ${i + 1}: ویدیو بزرگ‌تر از ۲۵ مگابایته؛ فایل قبلی نگه داشته شد.`);
+              } else {
+                let posterPath = '';
+                try {
+                  setStatus(statusId, 'busy', `در حال ساخت عکس بندانگشتی ${rowLabel} ${i + 1}...`);
+                  const poster = await makeVideoPoster(file);
+                  if (poster) posterPath = await ghUploadImage(poster);
+                } catch (pe) { /* the thumbnail is optional */ }
+                try {
+                  setStatus(statusId, 'busy', `در حال آپلود ویدیو ${rowLabel} ${i + 1} (ممکنه چند دقیقه طول بکشه، صفحه رو نبندید)...`);
+                  video = await ghUploadVideo(file);
+                  if (posterPath) image = posterPath;
+                } catch (vErr) {
+                  rowErrors.push(`${rowLabel} ${i + 1}: ${errMsg(vErr)} — فایل قبلی نگه داشته شد.`);
+                }
+              }
+            } else if (isImg) {
               setStatus(statusId, 'busy', `در حال آپلود عکس ${rowLabel} ${i + 1}...`);
               try {
                 image = await ghUploadImage(file);
+                video = '';   // a new photo replaces an old video
               } catch (imgErr) {
-                rowErrors.push(`${rowLabel} ${i + 1}: ${errMsg(imgErr)} — عکس قبلی نگه داشته شد.`);
-                // keep existingImage, don't block the other rows
+                rowErrors.push(`${rowLabel} ${i + 1}: ${errMsg(imgErr)} — فایل قبلی نگه داشته شد.`);
               }
+            } else {
+              rowErrors.push(`${rowLabel} ${i + 1}: فایل انتخابی عکس${hasExpiry ? ' یا ویدیو' : ''} نیست، فایل قبلی نگه داشته شد.`);
             }
           }
-          if (!image && !label) continue; // fully empty row, skip
+          if (!image && !video && !label) continue; // fully empty row, skip
 
           const slide = { label, image };
+          if (video && hasExpiry) slide.video = video;
           if (!hasExpiry) {
             const subEl = row.querySelector('.slide-sub'), descEl = row.querySelector('.slide-desc'), brEl = row.querySelector('.slide-brands');
             if (subEl && subEl.value.trim()) slide.sub = subEl.value.trim();
