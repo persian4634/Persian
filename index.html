@@ -159,6 +159,11 @@
   .logo{font-size:28px;font-weight:800;letter-spacing:.3px;color:var(--hi);text-align:center;text-shadow:0 1px 8px rgba(0,0,0,.25);}
   header.scrolled .logo{text-shadow:none;}
   .logo-img{height:52px;width:auto;display:block;max-width:125px;object-fit:contain;margin:0 auto;}
+  .logo-img-scrolled{display:none;}
+  header.has-logo2.scrolled #logoImg{display:none !important;}
+  header.has-logo2.scrolled #logoImgScrolled{display:block;}
+  html[data-theme="dark"] header.has-logo2.scrolled #logoImg{display:block !important;}
+  html[data-theme="dark"] header.has-logo2.scrolled #logoImgScrolled{display:none;}
   .round-btn{
     width:42px;height:42px;border-radius:50%;border:none;padding:0;cursor:pointer;
     background:var(--hbg);
@@ -848,6 +853,7 @@
     <div class="logo" id="logoWrap">
       <span id="logoText">پرشین</span>
       <img id="logoImg" class="logo-img" alt="پرشین" style="display:none;">
+      <img id="logoImgScrolled" class="logo-img logo-img-scrolled" alt="پرشین">
     </div>
     <div class="head-left">
       <button class="round-btn" id="shareBtn" aria-label="اشتراک‌گذاری"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="18" cy="5" r="2.6"/><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/><line x1="8.3" y1="10.7" x2="15.7" y2="6.3"/><line x1="8.3" y1="13.3" x2="15.7" y2="17.7"/></svg></button>
@@ -2834,6 +2840,10 @@
           photo.style.backgroundPosition = 'center';
         }
         if (hint) hint.style.display = 'none';
+      }
+      if (cfg.logo && cfg.logoScrolled) {
+        const l2 = document.getElementById('logoImgScrolled');
+        if (l2) { l2.src = encodeURI(cfg.logoScrolled); document.getElementById('siteHeader').classList.add('has-logo2'); }
       }
       if (cfg.logo) {
         const logoText = document.getElementById('logoText');

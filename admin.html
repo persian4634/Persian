@@ -180,6 +180,15 @@
       <div class="status" id="logoStatus"></div>
     </div>
     <div class="card">
+      <h2>لوگوی دوم (بعد از اسکرول)</h2>
+      <p class="help">لوگوی اصلی بالای صفحه روی عکس بزرگ نشون داده می‌شه (معمولاً سفید). وقتی کاربر صفحه رو پایین می‌کشه و هدر روشن می‌شه، این لوگوی دوم (مثلاً مشکی/طلایی) جاش رو می‌گیره. در حالت شب، همون لوگوی اصلی (سفید) می‌مونه. اگه خالی بذارید، لوگوی اصلی همیشه نشون داده می‌شه.</p>
+      <input type="file" id="logo2Image" accept="image/*">
+      <img id="logo2Preview" class="thumb">
+      <button class="btn btn-primary" id="saveLogo2Btn">ذخیره لوگوی دوم</button>
+      <button class="btn btn-danger" id="removeLogo2Btn">حذف لوگوی دوم</button>
+      <div class="status" id="logo2Status"></div>
+    </div>
+    <div class="card">
       <h2>دریافت نظرات مشتری‌ها (خصوصی)</h2>
       <p class="help">
         فرم نظرات سایت با یه سرویس رایگان (Web3Forms) کار می‌کنه که نظرات رو مستقیم به ایمیل شما می‌فرسته، بدون اینکه عمومی نمایش داده بشن.<br>
@@ -929,6 +938,40 @@
       setStatus('logoStatus', 'ok', 'لوگو ذخیره شد 🎉');
     } catch (e) {
       setStatus('logoStatus', 'err', 'خطا: ' + errMsg(e));
+    }
+  });
+
+  const logo2Image = document.getElementById('logo2Image');
+  logo2Image.addEventListener('change', () => {
+    const f = logo2Image.files[0];
+    const prev = document.getElementById('logo2Preview');
+    if (f) { prev.src = URL.createObjectURL(f); prev.style.display = 'block'; prev.style.background = '#ddd'; }
+    else { prev.style.display = 'none'; }
+  });
+  document.getElementById('saveLogo2Btn').addEventListener('click', async () => {
+    try {
+      validateCfg();
+      persistCfgIfNeeded();
+      const f = logo2Image.files[0];
+      if (!f) { setStatus('logo2Status', 'err', 'اول یه عکس انتخاب کنید.'); return; }
+      setStatus('logo2Status', 'busy', 'در حال آپلود لوگو...');
+      const path = await ghUploadImage(f);
+      setStatus('logo2Status', 'busy', 'در حال ذخیره تنظیمات...');
+      await saveConfigPatch({ logoScrolled: path });
+      setStatus('logo2Status', 'ok', 'لوگوی دوم ذخیره شد 🎉');
+    } catch (e) {
+      setStatus('logo2Status', 'err', 'خطا: ' + errMsg(e));
+    }
+  });
+  document.getElementById('removeLogo2Btn').addEventListener('click', async () => {
+    try {
+      validateCfg();
+      persistCfgIfNeeded();
+      setStatus('logo2Status', 'busy', 'در حال ذخیره تنظیمات...');
+      await saveConfigPatch({ logoScrolled: '' });
+      setStatus('logo2Status', 'ok', 'لوگوی دوم حذف شد.');
+    } catch (e) {
+      setStatus('logo2Status', 'err', 'خطا: ' + errMsg(e));
     }
   });
 
