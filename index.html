@@ -256,11 +256,12 @@
 
   /* ---- Stories row (static, swipe-to-scroll, Instagram-style) ---- */
   .stories-wrap{
+    direction:ltr;
     display:flex;gap:18px;overflow-x:auto;padding:8px 20px 14px;
     -webkit-overflow-scrolling:touch;scrollbar-width:none;
   }
   .stories-wrap::-webkit-scrollbar{display:none;}
-  .story-item{flex:0 0 auto;width:74px;text-align:center;background:none;border:none;font-family:inherit;padding:0;}
+  .story-item{direction:rtl;flex:0 0 auto;width:74px;text-align:center;background:none;border:none;font-family:inherit;padding:0;}
   .story-ring{
     position:relative;isolation:isolate;
     width:74px;height:74px;border-radius:50%;padding:3px;box-sizing:border-box;
@@ -865,7 +866,7 @@
   <div class="stories-more" id="storiesMore">
     <div class="sm-text"><i id="smDot"></i><span id="smText"></span></div>
     <div class="sm-bar"><div class="sm-thumb" id="smThumb"></div></div>
-    <button type="button" class="sm-arrow" id="smNext" aria-label="استوری‌های بعدی"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <button type="button" class="sm-arrow" id="smNext" aria-label="استوری‌های بعدی"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
   </div>
 
   <section class="section">
