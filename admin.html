@@ -568,20 +568,30 @@
 
   // ---------- Video stories ----------
   const MAX_VIDEO_BYTES = 25 * 1024 * 1024;
-  function fileToBase64(file){
-    return new Promise((resolve, reject) => {
+  // خوندن فایل به‌صورت بایت: اول arrayBuffer، اگه نشد FileReader (بعضی مرورگرهای موبایل یکی‌شون رو رد می‌کنن)
+  async function readFileBytes(file){
+    try { return await file.arrayBuffer(); } catch(e1) {}
+    return await new Promise((resolve, reject) => {
       const r = new FileReader();
-      r.onload = () => resolve(String(r.result).split(',')[1] || '');
-      r.onerror = () => reject(new Error('خوندن فایل ویدیو ممکن نشد.'));
-      r.readAsDataURL(file);
+      r.onload = () => resolve(r.result);
+      r.onerror = () => reject(new Error('خوندن فایل ویدیو ممکن نشد. دوباره ویدیو رو انتخاب کنید (بهتره از گالری، نه از داخل برنامه‌های دیگه).'));
+      r.readAsArrayBuffer(file);
     });
   }
-  async function ghUploadVideo(file){
+  function bytesToBase64(buf){
+    const bytes = new Uint8Array(buf);
+    const CH = 0x8000; let bin = '';
+    for (let i = 0; i < bytes.length; i += CH) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + CH));
+    return btoa(bin);
+  }
+  async function ghUploadVideo(file, preBytes){
     const extMap = { 'video/mp4': 'mp4', 'video/webm': 'webm', 'video/quicktime': 'mov' };
-    const ext = extMap[file.type] || ((file.name.split('.').pop() || 'mp4').toLowerCase().replace(/[^a-z0-9]/g, '') || 'mp4');
-    const base = Date.now() + '-' + file.name.replace(/[^a-zA-Z0-9.\-_]/g, '-').replace(/\.[^.]+$/, '');
+    const nameExt = ((file.name.split('.').pop() || '').toLowerCase().replace(/[^a-z0-9]/g, ''));
+    const ext = extMap[file.type] || (['mp4','webm','mov','m4v'].includes(nameExt) ? nameExt : 'mp4');
+    const base = Date.now() + '-' + file.name.replace(/[^a-zA-Z0-9.\-_]/g, '-').replace(/\.[^.]+$/, '').slice(0, 40);
     const path = `videos/${base}.${ext}`;
-    const b64 = await fileToBase64(file);
+    const buf = preBytes || await readFileBytes(file);
+    const b64 = bytesToBase64(buf);
     await ghPutFile(path, b64, `آپلود ویدیو ${base}.${ext}`);
     return path;
   }
@@ -1132,7 +1142,10 @@
         fileInput.insertAdjacentElement('afterend', img);
       }
       const note = wrap.querySelector('.vid-note');
+      wrap._vidBytes = null;
       if (f && f.type && f.type.startsWith('video/')) {
+        // همون لحظه انتخاب، فایل رو تو حافظه می‌خونیم تا بعداً (موقع ذخیره) دسترسی به فایل از دست نره
+        if (f.size <= MAX_VIDEO_BYTES) wrap._vidBytes = readFileBytes(f).catch(() => null);
         img.style.display = 'none';
         if (note) { note.style.display = 'block'; note.textContent = '🎬 ویدیو انتخاب شد: ' + f.name + ' (' + (f.size / 1048576).toFixed(1) + ' مگابایت)'; }
       } else if (f) {
@@ -1152,6 +1165,20 @@
   const EXPIRY_MS = { '2d': 2*86400000, '3d': 3*86400000, '7d': 7*86400000, '30d': 30*86400000 };
 
   function wireSlideSection(configKey, rowsId, loadBtnId, saveBtnId, statusId, rowLabel, itemNamePersian, hasExpiry){
+    let slidesLoaded = false;
+    const rowsEl = document.getElementById(rowsId);
+    const addBtn = document.createElement('button');
+    addBtn.type = 'button';
+    addBtn.className = 'btn btn-secondary';
+    addBtn.style.display = 'none';
+    addBtn.textContent = '+ افزودن ' + rowLabel + ' جدید';
+    rowsEl.insertAdjacentElement('afterend', addBtn);
+    addBtn.addEventListener('click', () => {
+      const idx = rowsEl.querySelectorAll('.slide-row').length;
+      const row = buildSlideRow(idx, null, rowLabel, hasExpiry);
+      rowsEl.appendChild(row);
+      row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
     document.getElementById(loadBtnId).addEventListener('click', async () => {
       try {
         validateCfg();
@@ -1163,9 +1190,12 @@
         const existingSlides = Array.isArray(config[configKey]) ? config[configKey] : [];
         const wrap = document.getElementById(rowsId);
         wrap.innerHTML = '';
-        for (let i = 0; i < 5; i++) {
+        const n = Math.max(existingSlides.length, 1);
+        for (let i = 0; i < n; i++) {
           wrap.appendChild(buildSlideRow(i, existingSlides[i], rowLabel, hasExpiry));
         }
+        slidesLoaded = true;
+        addBtn.style.display = 'block';
         document.getElementById(statusId).className = 'status';
       } catch (e) {
         setStatus(statusId, 'err', 'خطا: ' + errMsg(e));
@@ -1206,7 +1236,7 @@
                 } catch (pe) { /* the thumbnail is optional */ }
                 try {
                   setStatus(statusId, 'busy', `در حال آپلود ویدیو ${rowLabel} ${i + 1} (ممکنه چند دقیقه طول بکشه، صفحه رو نبندید)...`);
-                  video = await ghUploadVideo(file);
+                  video = await ghUploadVideo(file, row._vidBytes ? await row._vidBytes : null);
                   if (posterPath) image = posterPath;
                 } catch (vErr) {
                   rowErrors.push(`${rowLabel} ${i + 1}: ${errMsg(vErr)} — فایل قبلی نگه داشته شد.`);

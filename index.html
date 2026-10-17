@@ -286,6 +286,17 @@
     max-width:76px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   }
 
+  /* ---- Stories "more" indicator ---- */
+  .stories-more{display:none;align-items:center;justify-content:space-between;gap:14px;padding:0 22px 6px;}
+  .stories-more.show{display:flex;}
+  .stories-more .sm-text{font-size:12px;color:var(--muted);font-weight:600;white-space:nowrap;display:flex;align-items:center;gap:6px;}
+  .stories-more .sm-text b{color:var(--text);}
+  .stories-more .sm-text i{width:7px;height:7px;border-radius:50%;background:#e1306c;display:inline-block;}
+  .sm-bar{flex:1;max-width:140px;height:4px;border-radius:2px;background:rgba(128,128,128,.22);position:relative;direction:ltr;overflow:hidden;}
+  .sm-thumb{position:absolute;top:0;left:0;height:100%;border-radius:2px;background:var(--blue);transition:transform .12s linear;}
+  .sm-arrow{width:26px;height:26px;border-radius:50%;border:none;background:rgba(128,128,128,.16);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;flex:0 0 auto;}
+  .sm-arrow svg{width:13px;height:13px;stroke:var(--text);fill:none;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;}
+
   /* ---- About page (profile-style overlay) ---- */
   .about-overlay{position:fixed;inset:0;z-index:90;visibility:hidden;}
   .about-overlay.open{visibility:visible;}
@@ -849,6 +860,12 @@
     <div class="story-item" data-title="عینک آفتابی"><div class="story-ring" style="--c1:#5FCFC0;--c2:#1E7E76;"><div class="story-photo"><div class="story-photo-inner"><svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><circle cx="7" cy="13" r="3.2"/><circle cx="17" cy="13" r="3.2"/><path d="M10.2 13h3.6M3.6 13l1.5-5h13.8l1.5 5"/></svg></div></div></div><span>عینک آفتابی</span></div>
     <div class="story-item" data-title="جاکلیدی"><div class="story-ring" style="--c1:#E7727E;--c2:#8C2E3D;"><div class="story-photo"><div class="story-photo-inner"><svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><circle cx="8" cy="8" r="3.8"/><path d="M10.7 10.7l8.3 8.3M15.4 15.4l1.8-1.8M17.9 17.9l1.8-1.8"/></svg></div></div></div><span>جاکلیدی</span></div>
     <div class="story-item" data-title="ارسال ویژه"><div class="story-ring" style="--c1:#6E93F0;--c2:#2E4CA8;"><div class="story-photo"><div class="story-photo-inner"><svg viewBox="0 0 24 24" stroke="#fff" stroke-width="1.8" fill="none"><path d="M3 12h13l4 4M3 12l4-4M3 12l4 4"/></svg></div></div></div><span>ارسال ویژه</span></div>
+  </div>
+
+  <div class="stories-more" id="storiesMore">
+    <div class="sm-text"><i id="smDot"></i><span id="smText"></span></div>
+    <div class="sm-bar"><div class="sm-thumb" id="smThumb"></div></div>
+    <button type="button" class="sm-arrow" id="smNext" aria-label="استوری‌های بعدی"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
   </div>
 
   <section class="section">
@@ -1850,9 +1867,40 @@
       const k = storyKey(it);
       it.classList.toggle('seen', !!(seen[k] || seenMemory[k]));
     });
+    try { updateStoriesMore(); } catch(e){}
   }
   applySeenStories();                                   // static default row, on page load
   window.addEventListener('pageshow', applySeenStories); // back/forward cache
+
+  /* ---- Stories "more" indicator: count + scroll progress ---- */
+  const storiesMore = document.getElementById('storiesMore');
+  const smThumb = document.getElementById('smThumb');
+  function updateStoriesMore(){
+    const items = track.querySelectorAll('.story-item');
+    const n = items.length;
+    const overflow = track.scrollWidth - track.clientWidth > 8;
+    storiesMore.classList.toggle('show', n > 0 && overflow);
+    if (!n || !overflow) return;
+    const unseen = Array.from(items).filter(it => !it.classList.contains('seen')).length;
+    document.getElementById('smText').innerHTML = '<b>' + n.toLocaleString('fa-IR') + '</b> استوری' + (unseen ? ' · ' + unseen.toLocaleString('fa-IR') + ' دیده‌نشده' : ' · همه دیده شد') + ' — بکش تا بقیه رو ببینی';
+    document.getElementById('smDot').style.display = unseen ? '' : 'none';
+    const max = track.scrollWidth - track.clientWidth;
+    const prog = Math.min(1, Math.abs(track.scrollLeft) / max);
+    const ratio = Math.max(0.15, track.clientWidth / track.scrollWidth);
+    const rtl = getComputedStyle(track).direction === 'rtl';
+    const barW = smThumb.parentElement.clientWidth;
+    const thumbW = barW * ratio;
+    smThumb.style.width = (ratio * 100) + '%';
+    const pos = (rtl ? (1 - prog) : prog) * (barW - thumbW);
+    smThumb.style.transform = 'translateX(' + pos + 'px)';
+  }
+  track.addEventListener('scroll', updateStoriesMore, {passive:true});
+  window.addEventListener('resize', updateStoriesMore);
+  window.addEventListener('load', updateStoriesMore);
+  document.getElementById('smNext').addEventListener('click', () => {
+    const rtl = getComputedStyle(track).direction === 'rtl';
+    track.scrollBy({ left: (rtl ? -1 : 1) * track.clientWidth * 0.8, behavior: 'smooth' });
+  });
   function syncLikeButton(){
     const likes = readStore('storyLikes');
     storyLikeBtn.classList.toggle('liked', !!likes[storyKey(storyItems[storyIndex])]);
@@ -2143,6 +2191,7 @@
     const visible = (stories || []).filter(s => !s.expiresAt || s.expiresAt > now);
     renderStories(visible);
     hydrateStoryImages(visible);
+    setTimeout(updateStoriesMore, 50);
     openSharedStory(true);
   }
 
